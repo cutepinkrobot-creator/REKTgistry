@@ -77,7 +77,7 @@ export default function SourcesPage() {
       <div style={{ fontFamily: 'Orbitron, sans-serif', fontSize: '10px', color: '#5a6080', letterSpacing: '0.2em', marginBottom: '6px' }}>◈ DATA TRANSPARENCY</div>
       <h1 style={{ fontFamily: 'Orbitron, sans-serif', fontSize: '32px', fontWeight: 900, color: '#e2e8f0', marginBottom: '8px' }}>Our Data Sources</h1>
       <p style={{ fontSize: '14px', color: '#94a3b8', marginBottom: '40px', lineHeight: 1.7, maxWidth: '600px' }}>
-        Dark Trace aggregates data from public databases, on-chain APIs, and community submissions. We believe in full transparency about where our data comes from.
+        REKTgistry aggregates data from public databases, on-chain APIs, and community submissions. We believe in full transparency about where our data comes from.
       </p>
 
       <div className="flex flex-col gap-8">

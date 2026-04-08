@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { topIndividuals, recentIncidents, allProfiles, formatUsd, formatDate, STATS } from '@/lib/data';
+import TypewriterTitle from '@/components/TypewriterTitle';
 
 function StatCard({ value, label }: { value: string; label: string }) {
   return (
@@ -89,10 +90,7 @@ export default function HomePage() {
         <div className="inline-block mb-4" style={{ fontFamily: 'Orbitron, sans-serif', fontSize: '10px', fontWeight: 700, letterSpacing: '0.2em', color: '#5a6080', padding: '4px 12px', border: '1px solid #1f2133', borderRadius: '4px' }}>
           ◈ WEB3 SCAM REGISTRY · 12,860+ PROFILES
         </div>
-        <h1 style={{ fontFamily: 'Orbitron, sans-serif', fontSize: 'clamp(26px, 5vw, 50px)', fontWeight: 900, color: '#e2e8f0', lineHeight: 1.15, marginBottom: '12px' }}>
-          Know who you&apos;re working with.{' '}
-          <span className="dissolve" style={{ color: '#ccff00' }}>Before it&apos;s too late.</span>
-        </h1>
+        <TypewriterTitle />
         <p style={{ fontSize: '16px', color: '#94a3b8', maxWidth: '560px', margin: '0 auto 36px', lineHeight: 1.6 }}>
           Scammers operate in the dark. The community fights back. Search our registry before trusting anyone in Web3.
         </p>

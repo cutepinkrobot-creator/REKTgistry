@@ -35,7 +35,7 @@ export default function Navbar() {
               letterSpacing: '0.08em',
             }}
           >
-            DARK TRACE
+            REKTgistry
           </span>
         </Link>
 

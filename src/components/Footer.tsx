@@ -19,7 +19,7 @@ export default function Footer() {
               borderRadius: '4px',
             }}
           >
-            DARK TRACE
+            REKTgistry
           </span>
           <div style={{ flex: 1, height: '1px', background: '#1f2133' }} />
         </div>

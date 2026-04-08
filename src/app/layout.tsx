@@ -5,7 +5,7 @@ import Footer from "@/components/Footer";
 import CloudBackground from "@/components/CloudBackground";
 
 export const metadata: Metadata = {
-  title: "Dark Trace — Web3 Scam Registry",
+  title: "REKTgistry — Web3 Scam Registry",
   description: "Community-powered directory of Web3 scammers, rug pulls, and protocol exploits. Search by wallet address, Twitter handle, or project name.",
 };
 

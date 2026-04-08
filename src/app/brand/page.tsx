@@ -28,7 +28,7 @@ export default function BrandPage() {
       {/* Hero */}
       <div className="text-center mb-12">
         <span style={{ fontFamily: 'Orbitron, sans-serif', fontSize: '10px', fontWeight: 700, letterSpacing: '0.2em', color: '#ccff00', padding: '4px 12px', border: '1px solid rgba(204,255,0,0.2)', borderRadius: '4px' }}>◈ BRAND GUIDELINES</span>
-        <h1 style={{ fontFamily: 'Orbitron, sans-serif', fontSize: '44px', fontWeight: 900, color: '#ccff00', marginTop: '16px', letterSpacing: '0.06em' }}>DARK TRACE</h1>
+        <h1 style={{ fontFamily: 'Orbitron, sans-serif', fontSize: '44px', fontWeight: 900, color: '#ccff00', marginTop: '16px', letterSpacing: '0.06em' }}>REKTgistry</h1>
         <p style={{ fontFamily: 'Orbitron, sans-serif', fontSize: '16px', color: '#deff80', marginBottom: '4px' }}>Web3 Scam Registry</p>
         <p style={{ fontSize: '14px', color: '#5a6080', fontStyle: 'italic' }}>Before it&apos;s too late.</p>
       </div>
@@ -129,7 +129,7 @@ export default function BrandPage() {
         <h3 style={{ fontFamily: 'Orbitron, sans-serif', fontSize: '11px', fontWeight: 700, color: '#f59e0b', marginBottom: '10px', letterSpacing: '0.08em' }}>LEGAL & COMPLIANCE</h3>
         <ul style={{ fontSize: '12px', color: '#94a3b8', lineHeight: 1.9, paddingLeft: '14px' }}>
           <li>All listings must be clearly labeled with verification status</li>
-          <li>Dark Trace does not endorse or warrant community report accuracy</li>
+          <li>REKTgistry does not endorse or warrant community report accuracy</li>
           <li>&quot;Scammer&quot; and &quot;fraud&quot; refer to community-reported activity, not legal determinations</li>
           <li>Appeals must be processed within 14 business days</li>
           <li>Partnership use of wordmark or data requires direct team contact</li>

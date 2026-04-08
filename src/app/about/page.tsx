@@ -50,7 +50,7 @@ export default function AboutPage() {
           <h3 style={{ fontFamily: 'Orbitron, sans-serif', fontSize: '12px', fontWeight: 700, color: '#f59e0b', marginBottom: '12px', letterSpacing: '0.05em' }}>LEGAL DISCLOSURES</h3>
           <ul style={{ fontSize: '13px', color: '#94a3b8', lineHeight: 1.8, paddingLeft: '16px' }}>
             <li>All profiles are labeled &quot;alleged&quot; — no legal adjudication has occurred</li>
-            <li>Dark Trace is not a law enforcement agency</li>
+            <li>REKTgistry is not a law enforcement agency</li>
             <li>An appeal process is available at <Link href="/appeal" style={{ color: '#f59e0b' }}>/appeal</Link></li>
             <li>Information is provided for due diligence purposes only</li>
             <li>False reports may expose submitters to legal liability</li>

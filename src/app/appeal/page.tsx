@@ -40,7 +40,7 @@ export default function AppealPage() {
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         <div>
           <label style={labelStyle}>Profile URL or Name *</label>
-          <input name="profileUrl" required value={form.profileUrl} onChange={handleChange} placeholder="https://darktrace.vercel.app/directory/..." style={inputStyle} />
+          <input name="profileUrl" required value={form.profileUrl} onChange={handleChange} placeholder="https://rektgistry.com/directory/..." style={inputStyle} />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>

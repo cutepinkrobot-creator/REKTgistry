@@ -3,7 +3,7 @@ import Link from 'next/link';
 export default function WhitepaperPage() {
   const sections = [
     { num: '01', icon: '🛡️', title: 'The Problem', body: 'The Web3 ecosystem loses billions of dollars annually to scams, rug pulls, phishing attacks, and protocol exploits. Despite the scale, there is no unified community registry — information is scattered across Discord servers, Twitter threads, and forums where it quickly disappears.' },
-    { num: '02', icon: '🌐', title: 'What We Built', body: 'Dark Trace aggregates wallet addresses, social handles, evidence links, and victim accounts — all searchable in a public, verifiable directory. Every entry is community-sourced and moderation-reviewed before publication.' },
+    { num: '02', icon: '🌐', title: 'What We Built', body: 'REKTgistry aggregates wallet addresses, social handles, evidence links, and victim accounts — all searchable in a public, verifiable directory. Every entry is community-sourced and moderation-reviewed before publication.' },
     { num: '03', icon: '👥', title: 'Community Governance', body: 'Reports are submitted by the community and reviewed by moderators before appearing publicly. Any listed individual or project has the right to appeal. All profiles are labeled "alleged" until independently verified.' },
     { num: '04', icon: '🔒', title: 'Data Sources', body: 'We integrate with: DeFi Rekt, GoPlus Labs, Chainabuse, MetaMask eth-phishing-detect, ScamSniffer, OFAC SDN, SlowMist Hacked, Forta Network, ZachXBT research, PeckShield alerts, and community submissions.' },
     { num: '05', icon: '⚡', title: 'Technology Stack', body: 'Built on Next.js with a Supabase PostgreSQL backend. Features full-text search, a real-time moderation queue, on-chain address flagging via GoPlus API, and a public REST API for integrations.' },
@@ -15,10 +15,10 @@ export default function WhitepaperPage() {
       {/* Hero */}
       <div className="text-center mb-12">
         <span style={{ fontFamily: 'Orbitron, sans-serif', fontSize: '10px', fontWeight: 700, letterSpacing: '0.2em', color: '#ccff00', padding: '4px 12px', border: '1px solid rgba(204,255,0,0.2)', borderRadius: '4px' }}>◈ WHITEPAPER</span>
-        <h1 style={{ fontFamily: 'Orbitron, sans-serif', fontSize: '40px', fontWeight: 900, color: '#ccff00', marginTop: '16px', marginBottom: '4px', letterSpacing: '0.05em' }}>DARK TRACE</h1>
+        <h1 style={{ fontFamily: 'Orbitron, sans-serif', fontSize: '40px', fontWeight: 900, color: '#ccff00', marginTop: '16px', marginBottom: '4px', letterSpacing: '0.05em' }}>REKTgistry</h1>
         <p style={{ fontFamily: 'Orbitron, sans-serif', fontSize: '16px', color: '#deff80', marginBottom: '8px' }}>Web3 Scam Registry</p>
         <p style={{ fontSize: '14px', color: '#5a6080', marginBottom: '4px' }}>Community intelligence infrastructure for a safer Web3</p>
-        <p style={{ fontSize: '12px', color: '#5a6080' }}>Version 1.0 · Dark Trace</p>
+        <p style={{ fontSize: '12px', color: '#5a6080' }}>Version 1.0 · REKTgistry</p>
       </div>
 
       {/* Key Metrics */}
@@ -57,7 +57,7 @@ export default function WhitepaperPage() {
       {/* Legal notice */}
       <div className="rounded-xl p-5 mb-10" style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.25)' }}>
         <p style={{ fontSize: '12px', color: '#94a3b8', lineHeight: 1.7 }}>
-          <strong style={{ color: '#f59e0b' }}>Legal Notice:</strong> All profiles on Dark Trace represent alleged community-reported activity and have not been independently verified or legally adjudicated. Information is provided for due diligence purposes only. An appeal process is available at <Link href="/appeal" style={{ color: '#f59e0b' }}>/appeal</Link>.
+          <strong style={{ color: '#f59e0b' }}>Legal Notice:</strong> All profiles on REKTgistry represent alleged community-reported activity and have not been independently verified or legally adjudicated. Information is provided for due diligence purposes only. An appeal process is available at <Link href="/appeal" style={{ color: '#f59e0b' }}>/appeal</Link>.
         </p>
       </div>
 
