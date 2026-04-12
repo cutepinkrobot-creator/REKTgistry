@@ -35,7 +35,7 @@ export default function Navbar() {
               letterSpacing: '0.08em',
             }}
           >
-            REKTgistry
+            REKT<span style={{ color: '#ffffff', fontWeight: 700 }}>gistry</span>
           </span>
         </Link>
 

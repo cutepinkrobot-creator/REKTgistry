@@ -5,7 +5,7 @@ import Footer from "@/components/Footer";
 import CloudBackground from "@/components/CloudBackground";
 
 export const metadata: Metadata = {
-  title: "REKTgistry — Web3 Scam Registry",
+  title: "Dark Trace — Web3 Scam Registry",
   description: "Community-powered directory of Web3 scammers, rug pulls, and protocol exploits. Search by wallet address, Twitter handle, or project name.",
 };
 
@@ -16,7 +16,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full">
-      <body className="min-h-full flex flex-col" style={{ background: '#0b0c10', color: '#e2e8f0', fontFamily: "'Exo 2', sans-serif" }}>
+      <body className="min-h-full flex flex-col" style={{ background: '#0b0c10', color: '#e2e8f0', fontFamily: "'Orbitron', sans-serif" }}>
         <CloudBackground />
         <Navbar />
         <main className="flex-1 relative z-10 pt-14">

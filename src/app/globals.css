@@ -22,9 +22,11 @@ html { scroll-behavior: smooth; }
 body {
   background-color: var(--bg);
   color: #e2e8f0;
-  font-family: 'Exo 2', sans-serif;
+  font-family: 'Orbitron', sans-serif;
+  -webkit-font-smoothing: antialiased;
   min-height: 100vh;
   overflow-x: hidden;
+  position: relative;
 }
 
 .font-orbitron { font-family: 'Orbitron', sans-serif; }
@@ -55,3 +57,107 @@ body {
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--slate); }
+
+/* ── Dark Trace custom tokens ── */
+:root {
+  --bg-primary: #0b0c10;
+  --bg-secondary: #0f1117;
+  --bg-card: #14161e;
+  --text-primary: #dde1f0;
+  --text-secondary: #5a6080;
+  --accent: #6878a0;
+  --accent-hover: #5a6890;
+  --accent-secondary: #8899bb;
+  --darkside-bg: #0b0d03;
+  --darkside-bg2: #0f1104;
+  --darkside-border: #3a4a00;
+  --darkside-glow: rgba(200,255,0,0.13);
+  --darkside-text: #ccff00;
+  --darkside-accent: #99cc00;
+  --text-card: #deff80;
+}
+
+/* ── Animated saber-red gradient divider bars (neon lime) ── */
+@keyframes saber-red-flow {
+  0%   { background-position: 0%; }
+  100% { background-position: -100%; }
+}
+@keyframes saber-red-flow-r {
+  0%   { background-position: -100%; }
+  100% { background-position: 0%; }
+}
+.saber-red {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    #1a2800 8%,
+    #3a5a00 20%,
+    #88cc00 36%,
+    #ccff00 48%,
+    #eeff88 52%,
+    #ccff00 56%,
+    #88cc00 68%,
+    #3a5a00 82%,
+    #1a2800 92%,
+    transparent 100%
+  ) 0 0 / 200% 100%;
+  border: none;
+  height: 2px;
+  animation: 6s linear infinite saber-red-flow-r;
+  box-shadow: 0 0 10px rgba(180,255,0,0.55), 0 0 22px rgba(180,255,0,0.18);
+}
+.saber-red-r {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    #1a2800 8%,
+    #3a5a00 20%,
+    #88cc00 36%,
+    #ccff00 48%,
+    #eeff88 52%,
+    #ccff00 56%,
+    #88cc00 68%,
+    #3a5a00 82%,
+    #1a2800 92%,
+    transparent 100%
+  ) 0 0 / 200% 100%;
+  border: none;
+  height: 2px;
+  animation: 6s linear infinite saber-red-flow;
+  box-shadow: 0 0 10px rgba(180,255,0,0.55), 0 0 22px rgba(180,255,0,0.18);
+}
+
+/* ── Dark side card (neon glow) ── */
+.dark-side-card {
+  background-color: var(--darkside-bg) !important;
+  border-color: var(--darkside-border) !important;
+  box-shadow: 0 0 14px var(--darkside-glow), inset 0 0 20px rgba(60,80,0,0.05) !important;
+  transition: all 0.3s ease;
+}
+.dark-side-card:hover {
+  box-shadow: 0 0 24px var(--darkside-glow), 0 0 40px rgba(180,255,0,0.08), inset 0 0 20px rgba(60,80,0,0.08) !important;
+  border-color: #5a7000 !important;
+}
+
+/* ── Slow-appear dissolve reform (hero subhead) ── */
+@keyframes slow-appear {
+  0%   { opacity: 0;    letter-spacing: 0.55em; filter: blur(7px); }
+  30%  { opacity: 0.15; letter-spacing: 0.3em;  filter: blur(4px); }
+  65%  { opacity: 0.65; letter-spacing: 0.08em; filter: blur(1px); }
+  82%  { opacity: 1;    letter-spacing: normal; filter: blur(0);   }
+  100% { opacity: 1;    letter-spacing: normal; filter: blur(0);   }
+}
+.dissolve-reform {
+  opacity: 0;
+  display: inline-block;
+  animation: 4.5s ease-in 0.4s forwards slow-appear;
+}
+
+/* ── SW title helper ── */
+.sw-title {
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: center;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900;
+}
