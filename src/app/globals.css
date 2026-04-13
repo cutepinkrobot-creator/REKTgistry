@@ -19,6 +19,15 @@
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 
+/* Force Orbitron on ALL elements including form controls */
+input, textarea, select, button, a {
+  font-family: 'Orbitron', sans-serif;
+}
+
+::placeholder {
+  font-family: 'Orbitron', sans-serif;
+}
+
 body {
   background-color: var(--bg);
   color: #e2e8f0;
