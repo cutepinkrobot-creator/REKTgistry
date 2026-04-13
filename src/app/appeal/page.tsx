@@ -226,7 +226,7 @@ function AppealInner() {
         >
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-black" style={{ color: "var(--text-primary)" }}>
-              Appeal Filing Fee
+              Appeal Filing Fee — $5.00
             </h2>
             <span
               className="text-[10px] font-bold px-2 py-1 rounded"
@@ -315,7 +315,7 @@ function AppealInner() {
                 className="w-full py-3 rounded-xl text-sm font-black transition-all disabled:opacity-40"
                 style={{ backgroundColor: "rgba(74,126,255,0.12)", border: "1.5px solid rgba(74,126,255,0.4)", color: "#4a7eff" }}
               >
-                Continue with Card →
+                Pay $5.00 — Continue with Card →
               </button>
               <p className="text-[10px] text-center" style={{ color: "var(--text-secondary)" }}>
                 Secure card payment via Stripe

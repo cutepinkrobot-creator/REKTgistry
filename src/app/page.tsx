@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 // ── Icons (inline SVGs matching lucide-react) ───────────────────────────────
 const iconProps = {
@@ -558,6 +558,90 @@ function formatBigUsd(n: number): string {
   return `$${n.toLocaleString()}`;
 }
 
+function useCountUp(target: number, duration = 1800) {
+  const [value, setValue] = useState(0);
+  const started = useRef(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (target === 0) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !started.current) {
+          started.current = true;
+          const start = performance.now();
+          function tick(now: number) {
+            const elapsed = now - start;
+            const progress = Math.min(elapsed / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            setValue(Math.round(eased * target));
+            if (progress < 1) requestAnimationFrame(tick);
+          }
+          requestAnimationFrame(tick);
+        }
+      },
+      { threshold: 0.2 }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [target, duration]);
+
+  return { value, ref };
+}
+
+function StatCard({
+  icon, mainValue, mainLabel, subValue, subLabel, isMoney = false,
+}: {
+  icon: React.ReactNode;
+  mainValue: number;
+  mainLabel: string;
+  subValue?: number;
+  subLabel?: string;
+  isMoney?: boolean;
+}) {
+  const { value: animMain, ref } = useCountUp(mainValue, 1800);
+  const { value: animSub } = useCountUp(subValue ?? 0, 2200);
+
+  const fmt = (n: number) => isMoney ? formatBigUsd(n) : n.toLocaleString();
+
+  return (
+    <div
+      ref={ref}
+      className="rounded-xl p-5 flex flex-col items-center justify-center gap-2 text-center"
+      style={{
+        backgroundColor: 'var(--bg-card)',
+        border: '1px solid rgba(180,255,0,0.2)',
+        boxShadow: '0 2px 12px rgba(180,255,0,0.08)',
+      }}
+    >
+      <div
+        className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+        style={{ backgroundColor: 'rgba(180,255,0,0.08)' }}
+      >
+        {icon}
+      </div>
+      <div>
+        <div className="text-2xl font-black tabular-nums" style={{ color: '#ccff00' }}>
+          {mainValue === 0 ? '—' : fmt(animMain)}
+        </div>
+        <div className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+          {mainLabel}
+        </div>
+      </div>
+      {subValue !== undefined && subValue > 0 && (
+        <div className="w-full pt-2 mt-1" style={{ borderTop: '1px solid rgba(180,255,0,0.1)' }}>
+          <div className="text-sm font-black tabular-nums" style={{ color: 'rgba(204,255,0,0.6)' }}>
+            {fmt(animSub)}
+          </div>
+          <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+            {subLabel}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function LiveStats() {
   const [stats, setStats] = useState<{
     events: number; lostUsd: number;
@@ -582,74 +666,21 @@ function LiveStats() {
 
   return (
     <section className="grid grid-cols-2 gap-4 mb-12">
-      {/* Incidents card */}
-      <div
-        className="rounded-xl p-5 flex flex-col items-center justify-center gap-2 text-center"
-        style={{
-          backgroundColor: 'var(--bg-card)',
-          border: '1px solid rgba(180,255,0,0.2)',
-          boxShadow: '0 2px 12px rgba(180,255,0,0.08)',
-        }}
-      >
-        <div
-          className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-          style={{ backgroundColor: 'rgba(180,255,0,0.08)' }}
-        >
-          <UsersIcon className="w-5 h-5" style={{ color: '#ccff00' }} />
-        </div>
-        <div>
-          <div className="text-2xl font-black tabular-nums" style={{ color: '#ccff00' }}>
-            {loading ? '—' : stats!.events.toLocaleString()}
-          </div>
-          <div className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
-            In Our Registry
-          </div>
-        </div>
-        {!loading && stats!.industryEvents > 0 && (
-          <div className="w-full pt-2 mt-1" style={{ borderTop: '1px solid rgba(180,255,0,0.1)' }}>
-            <div className="text-sm font-black tabular-nums" style={{ color: 'rgba(204,255,0,0.6)' }}>
-              {stats!.industryEvents.toLocaleString()}
-            </div>
-            <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-              Industry-wide · via SlowMist
-            </div>
-          </div>
-        )}
-      </div>
-      {/* Losses card */}
-      <div
-        className="rounded-xl p-5 flex flex-col items-center justify-center gap-2 text-center"
-        style={{
-          backgroundColor: 'var(--bg-card)',
-          border: '1px solid rgba(180,255,0,0.2)',
-          boxShadow: '0 2px 12px rgba(180,255,0,0.08)',
-        }}
-      >
-        <div
-          className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-          style={{ backgroundColor: 'rgba(180,255,0,0.08)' }}
-        >
-          <DollarIcon className="w-5 h-5" style={{ color: '#ccff00' }} />
-        </div>
-        <div>
-          <div className="text-2xl font-black tabular-nums" style={{ color: '#ccff00' }}>
-            {loading ? '—' : formatBigUsd(stats!.lostUsd)}
-          </div>
-          <div className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
-            Tracked in Registry
-          </div>
-        </div>
-        {!loading && stats!.industryLost > 0 && (
-          <div className="w-full pt-2 mt-1" style={{ borderTop: '1px solid rgba(180,255,0,0.1)' }}>
-            <div className="text-sm font-black tabular-nums" style={{ color: 'rgba(204,255,0,0.6)' }}>
-              {formatBigUsd(stats!.industryLost)}
-            </div>
-            <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-              Industry-wide · via SlowMist
-            </div>
-          </div>
-        )}
-      </div>
+      <StatCard
+        icon={<UsersIcon className="w-5 h-5" style={{ color: '#ccff00' }} />}
+        mainValue={loading ? 0 : stats?.events ?? 0}
+        mainLabel="Total Incidents"
+        subValue={loading ? 0 : stats?.industryEvents ?? 0}
+        subLabel="Industry Events · via SlowMist"
+      />
+      <StatCard
+        icon={<DollarIcon className="w-5 h-5" style={{ color: '#ccff00' }} />}
+        mainValue={loading ? 0 : stats?.lostUsd ?? 0}
+        mainLabel="Tracked in Registry"
+        subValue={loading ? 0 : stats?.industryLost ?? 0}
+        subLabel="Total Industry Losses · via SlowMist"
+        isMoney
+      />
     </section>
   );
 }
