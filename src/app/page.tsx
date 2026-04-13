@@ -558,46 +558,24 @@ function formatBigUsd(n: number): string {
   return `$${n.toLocaleString()}`;
 }
 
-function useCountUp(target: number, duration = 1800) {
+// Shared count-up: triggered by an external visible flag
+function useCountUpValue(target: number, duration: number, visible: boolean) {
   const [value, setValue] = useState(0);
   const started = useRef(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const isVisible = useRef(false);
-
-  // Track visibility separately so we can trigger when data arrives
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => { isVisible.current = entry.isIntersecting; },
-      { threshold: 0.2 }
-    );
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    if (target === 0 || started.current) return;
-    // Wait until visible AND target is real
-    function tryStart() {
-      if (!isVisible.current) {
-        const t = setTimeout(tryStart, 100);
-        return () => clearTimeout(t);
-      }
-      started.current = true;
-      const start = performance.now();
-      function tick(now: number) {
-        const elapsed = now - start;
-        const progress = Math.min(elapsed / duration, 1);
-        const eased = 1 - Math.pow(1 - progress, 3);
-        setValue(Math.round(eased * target));
-        if (progress < 1) requestAnimationFrame(tick);
-      }
-      requestAnimationFrame(tick);
+    if (!visible || target === 0 || started.current) return;
+    started.current = true;
+    const start = performance.now();
+    function tick(now: number) {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setValue(Math.round(eased * target));
+      if (progress < 1) requestAnimationFrame(tick);
     }
-    const cancel = tryStart();
-    return typeof cancel === 'function' ? cancel : undefined;
-  }, [target, duration]);
-
-  return { value, ref };
+    requestAnimationFrame(tick);
+  }, [target, duration, visible]);
+  return value;
 }
 
 function StatCard({
@@ -610,14 +588,27 @@ function StatCard({
   subLabel?: string;
   isMoney?: boolean;
 }) {
-  const { value: animMain, ref } = useCountUp(mainValue, 1800);
-  const { value: animSub } = useCountUp(subValue ?? 0, 2200);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
 
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setVisible(true); },
+      { threshold: 0.2 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const animMain = useCountUpValue(mainValue, 1800, visible);
+  const animSub  = useCountUpValue(subValue ?? 0, 2200, visible);
   const fmt = (n: number) => isMoney ? formatBigUsd(n) : n.toLocaleString();
 
   return (
     <div
-      ref={ref}
+      ref={cardRef}
       className="rounded-xl p-5 flex flex-col items-center justify-center gap-2 text-center"
       style={{
         backgroundColor: 'var(--bg-card)',
