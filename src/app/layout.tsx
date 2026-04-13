@@ -5,8 +5,25 @@ import Footer from "@/components/Footer";
 import CloudBackground from "@/components/CloudBackground";
 
 export const metadata: Metadata = {
-  title: "Dark Trace — Web3 Scam Registry",
+  title: {
+    default: "REKTgistry — Web3 Scam Registry",
+    template: "%s | REKTgistry",
+  },
   description: "Community-powered directory of Web3 scammers, rug pulls, and protocol exploits. Search by wallet address, Twitter handle, or project name.",
+  keywords: ["web3 scam", "crypto scammer", "rug pull", "blockchain fraud", "NFT scam", "DeFi exploit", "crypto safety"],
+  metadataBase: new URL("https://rektgistry.com"),
+  openGraph: {
+    title: "REKTgistry — Web3 Scam Registry",
+    description: "Community-powered directory of Web3 scammers, rug pulls, and protocol exploits.",
+    url: "https://rektgistry.com",
+    siteName: "REKTgistry",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "REKTgistry — Web3 Scam Registry",
+    description: "Community-powered directory of Web3 scammers, rug pulls, and protocol exploits.",
+  },
 };
 
 export default function RootLayout({
