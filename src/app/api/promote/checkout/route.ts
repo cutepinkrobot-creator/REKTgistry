@@ -12,7 +12,7 @@ import { NextResponse } from "next/server";
  * isn't installed yet — the handler will just return a clear error instead.
  */
 
-type Tier = "24h" | "48h" | "72h";
+type Tier = "24h" | "3d" | "7d";
 
 interface StripeClient {
   checkout: {
@@ -22,10 +22,10 @@ interface StripeClient {
   };
 }
 
-const TIER_PRICES: Record<Tier, { amount: number; label: string }> = {
-  "24h": { amount: 1000, label: "Featured Hall of Shame — 24 Hours" },
-  "48h": { amount: 1500, label: "Featured Hall of Shame — 48 Hours" },
-  "72h": { amount: 2000, label: "Featured Hall of Shame — 72 Hours" },
+const TIER_PRICES: Record<Tier, { amount: number; label: string; hours: number }> = {
+  "24h": { amount: 1000, label: "Featured Hall of Shame — 24 Hours", hours: 24 },
+  "3d":  { amount: 1500, label: "Featured Hall of Shame — 3 Days",   hours: 72 },
+  "7d":  { amount: 2000, label: "Featured Hall of Shame — 1 Week",   hours: 168 },
 };
 
 export async function POST(request: Request) {

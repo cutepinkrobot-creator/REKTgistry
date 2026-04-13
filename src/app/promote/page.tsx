@@ -1,17 +1,18 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
+import { getProfiles, ScammerProfile } from "@/lib/supabase";
+
+type TierId = "24h" | "3d" | "7d";
 
 type Tier = {
-  id: "24h" | "48h" | "72h";
+  id: TierId;
   label: string;
+  duration: string;
   price: number;
   desc: string;
   icon: string;
-  color: string;
-  border: string;
-  textColor: string;
   popular?: boolean;
 };
 
@@ -19,171 +20,281 @@ const TIERS: Tier[] = [
   {
     id: "24h",
     label: "24 Hours",
+    duration: "1 day",
     price: 10,
-    desc: "Featured in Hall of Shame for 24 hours",
+    desc: "Pinned at the top of the Hall of Shame for 24 hours",
     icon: "⚡",
-    color: "rgba(245,158,11,0.1)",
-    border: "rgba(245,158,11,0.3)",
-    textColor: "#ccff00",
   },
   {
-    id: "48h",
-    label: "48 Hours",
+    id: "3d",
+    label: "3 Days",
+    duration: "72 hours",
     price: 15,
-    desc: "Featured in Hall of Shame for 48 hours",
+    desc: "Maximum visibility for 3 full days",
     icon: "🔥",
-    color: "rgba(232,202,0,0.12)",
-    border: "rgba(232,202,0,0.38)",
-    textColor: "#ccff00",
     popular: true,
   },
   {
-    id: "72h",
-    label: "72 Hours",
+    id: "7d",
+    label: "1 Week",
+    duration: "7 days",
     price: 20,
-    desc: "Featured in Hall of Shame for 72 hours",
+    desc: "Full week of featured placement — best value",
     icon: "☠️",
-    color: "rgba(200,170,0,0.14)",
-    border: "rgba(200,170,0,0.42)",
-    textColor: "#ccff00",
   },
 ];
 
-type SelectedProfile = { id: string; display_name: string; slug?: string };
+function ProfileSearchResult({ profile, onSelect }: { profile: ScammerProfile; onSelect: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className="w-full text-left flex items-center gap-3 px-4 py-3 rounded-lg transition-all"
+      style={{
+        backgroundColor: "rgba(255,255,255,0.03)",
+        border: "1px solid var(--darkside-border)",
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(204,255,0,0.06)")}
+      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.03)")}
+    >
+      <div
+        className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0"
+        style={{ backgroundColor: "rgba(55,70,0,0.4)", color: "#ccff00", border: "1px solid rgba(100,130,0,0.4)" }}
+      >
+        {profile.display_name?.charAt(0)?.toUpperCase() ?? "?"}
+      </div>
+      <div className="min-w-0">
+        <div className="text-sm font-bold truncate" style={{ color: "var(--text-primary)" }}>
+          {profile.display_name}
+        </div>
+        {profile.twitter_handle && (
+          <div className="text-xs" style={{ color: "#5a6080" }}>@{profile.twitter_handle}</div>
+        )}
+      </div>
+      <div
+        className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded flex-shrink-0"
+        style={{ backgroundColor: "rgba(55,70,0,0.3)", color: "#ccff00", border: "1px solid rgba(100,130,0,0.4)" }}
+      >
+        SELECT →
+      </div>
+    </button>
+  );
+}
 
 function PromoteInner() {
   const search = useSearchParams();
-  const initialProfile = search.get("profile") ?? "";
+  const status = search.get("status");
 
-  const [query, setQuery] = useState(initialProfile);
-  const [selected, setSelected] = useState<SelectedProfile | null>(null);
-  const [tierId, setTierId] = useState<Tier["id"] | null>(null);
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<ScammerProfile[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [selected, setSelected] = useState<ScammerProfile | null>(null);
+  const [tierId, setTierId] = useState<TierId | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const tier = TIERS.find((t) => t.id === tierId) ?? null;
+
+  // Live search Supabase
+  useEffect(() => {
+    if (query.trim().length < 2) { setResults([]); return; }
+    if (debounce.current) clearTimeout(debounce.current);
+    debounce.current = setTimeout(async () => {
+      setSearching(true);
+      const { data } = await getProfiles({ search: query.trim(), pageSize: 6, page: 1 });
+      setResults(data ?? []);
+      setSearching(false);
+    }, 300);
+  }, [query]);
 
   async function startCheckout() {
     if (!selected || !tierId) return;
     setProcessing(true);
+    setError(null);
     try {
       const res = await fetch("/api/promote/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ profile_id: selected.id, tier: tierId }),
       });
-      const { url, error } = await res.json();
-      if (error) {
-        alert("Payment error: " + error);
+      const { url, error: apiError } = await res.json();
+      if (apiError) {
+        setError(apiError);
         setProcessing(false);
         return;
       }
-      if (url) {
-        window.location.href = url;
-      }
+      if (url) window.location.href = url;
     } catch {
-      alert("Something went wrong. Please try again.");
+      setError("Something went wrong. Please try again.");
       setProcessing(false);
     }
   }
 
+  // Success / cancel states from Stripe redirect
+  if (status === "success") {
+    return (
+      <div className="max-w-lg mx-auto px-4 py-20 text-center">
+        <div
+          className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5 text-3xl"
+          style={{ backgroundColor: "rgba(245,158,11,0.12)", border: "2px solid #f59e0b" }}
+        >
+          ★
+        </div>
+        <h1 className="text-2xl font-black mb-3 sw-title" style={{ color: "#f59e0b" }}>
+          Profile Featured!
+        </h1>
+        <p className="text-sm mb-8" style={{ color: "var(--text-secondary)" }}>
+          The profile is now pinned at the top of the Hall of Shame. It will be visible to every visitor for the chosen duration.
+        </p>
+        <a
+          href="/"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black"
+          style={{ backgroundColor: "rgba(245,158,11,0.14)", border: "1.5px solid rgba(245,158,11,0.45)", color: "#f59e0b" }}
+        >
+          ← Back to Home
+        </a>
+      </div>
+    );
+  }
+
+  if (status === "cancel") {
+    return (
+      <div className="max-w-lg mx-auto px-4 py-20 text-center">
+        <div
+          className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5 text-2xl"
+          style={{ backgroundColor: "rgba(204,0,0,0.1)", border: "2px solid rgba(204,0,0,0.3)" }}
+        >
+          ✕
+        </div>
+        <h1 className="text-xl font-black mb-3 sw-title" style={{ color: "var(--text-primary)" }}>
+          Payment Cancelled
+        </h1>
+        <p className="text-sm mb-6" style={{ color: "var(--text-secondary)" }}>
+          No charge was made. You can try again whenever you&apos;re ready.
+        </p>
+        <a
+          href="/promote"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black"
+          style={{ backgroundColor: "rgba(245,158,11,0.14)", border: "1.5px solid rgba(245,158,11,0.45)", color: "#f59e0b" }}
+        >
+          Try Again
+        </a>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
-      <div className="mb-6">
+      {/* Header */}
+      <div className="mb-6 text-center">
         <div
           className="inline-flex items-center gap-1.5 text-xs font-black tracking-widest uppercase px-2.5 py-1 rounded mb-3"
-          style={{ backgroundColor: "rgba(245,158,11,0.1)", color: "#b45309", border: "1px solid rgba(245,158,11,0.3)" }}
+          style={{ backgroundColor: "rgba(245,158,11,0.1)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.3)" }}
         >
           ★ FEATURED HALL OF SHAME
         </div>
-        <h1 className="text-2xl font-black sw-title text-center" style={{ color: "var(--text-primary)" }}>
+        <h1 className="text-2xl font-black sw-title" style={{ color: "var(--text-primary)" }}>
           Feature a Scammer
         </h1>
-        <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
-          Pin any registry profile to the top of the Hall of Shame for 24, 48, or 72 hours. Maximum visibility for the community&apos;s most important warnings.
+        <p className="text-sm mt-2 max-w-lg mx-auto" style={{ color: "var(--text-secondary)" }}>
+          Pin any registered profile to the top of the Hall of Shame so the community sees it first.
+          Maximum exposure for the most important warnings.
         </p>
       </div>
 
+      {/* How it works */}
       <div
         className="rounded-xl p-4 mb-8 flex items-start gap-3"
-        style={{ backgroundColor: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.2)" }}
+        style={{ backgroundColor: "rgba(245,158,11,0.05)", border: "1px solid rgba(245,158,11,0.2)" }}
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 mt-0.5 flex-shrink-0 text-yellow-500">
-          <path d="M12 2l2.39 7.36h7.74l-6.26 4.55 2.39 7.36L12 16.72l-6.26 4.55 2.39-7.36L1.87 9.36h7.74z" />
-        </svg>
+        <span style={{ fontSize: 18, flexShrink: 0 }}>★</span>
         <div className="text-xs" style={{ color: "var(--text-secondary)" }}>
-          <p className="font-bold mb-1" style={{ color: "#b45309" }}>
-            How Featured Profiles Work:
-          </p>
+          <p className="font-bold mb-1.5" style={{ color: "#f59e0b" }}>How Featured Profiles Work</p>
           <ul className="space-y-1 list-disc list-inside">
-            <li>
-              Selected profile appears <strong>pinned at the top</strong> of the Hall of Shame on the homepage.
-            </li>
-            <li>Shown to every visitor for the chosen duration.</li>
-            <li>Features a golden ★ FEATURED badge so it stands out.</li>
-            <li>Payment processed securely via Stripe.</li>
+            <li>Profile is <strong style={{ color: "var(--text-primary)" }}>pinned at the top</strong> of the Hall of Shame homepage</li>
+            <li>Shown to every visitor for your chosen duration</li>
+            <li>Displays a gold <strong style={{ color: "#f59e0b" }}>★ FEATURED</strong> badge</li>
+            <li>Payment processed securely via Stripe — no account required</li>
           </ul>
         </div>
       </div>
 
-      {/* Step 1 */}
+      {/* Step 1 — search */}
       <section
         className="rounded-2xl p-5 mb-6"
         style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)" }}
       >
         <h2 className="text-sm font-black mb-3" style={{ color: "var(--text-primary)" }}>
-          Step 1 — Select a Profile
+          Step 1 — Find the Profile
         </h2>
+
         {selected ? (
           <div
             className="flex items-center justify-between rounded-lg px-4 py-3"
-            style={{ backgroundColor: "rgba(204,255,0,0.06)", border: "1px solid rgba(204,255,0,0.25)" }}
+            style={{ backgroundColor: "rgba(204,255,0,0.06)", border: "1px solid rgba(204,255,0,0.3)" }}
           >
-            <div>
-              <div className="text-sm font-black" style={{ color: "var(--text-primary)" }}>
-                {selected.display_name}
+            <div className="flex items-center gap-3">
+              <div
+                className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-black flex-shrink-0"
+                style={{ backgroundColor: "rgba(55,70,0,0.4)", color: "#ccff00", border: "1px solid rgba(100,130,0,0.4)" }}
+              >
+                {selected.display_name?.charAt(0)?.toUpperCase()}
               </div>
-              <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#ccff00" }}>
-                approved
+              <div>
+                <div className="text-sm font-black" style={{ color: "var(--text-primary)" }}>{selected.display_name}</div>
+                {selected.twitter_handle && (
+                  <div className="text-xs" style={{ color: "#5a6080" }}>@{selected.twitter_handle}</div>
+                )}
               </div>
             </div>
             <button
               type="button"
-              onClick={() => setSelected(null)}
-              className="text-xs font-bold underline"
+              onClick={() => { setSelected(null); setQuery(""); }}
+              className="text-xs font-bold underline ml-4"
               style={{ color: "var(--text-secondary)" }}
             >
               Change
             </button>
           </div>
         ) : (
-          <>
+          <div className="relative">
+            <svg
+              xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+              className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              <path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/>
+            </svg>
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search profile by name or Twitter handle..."
-              className="w-full px-3 py-2.5 rounded-lg text-sm"
-              style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
+              placeholder="Search by name or Twitter handle..."
+              className="w-full pl-8 pr-4 py-2.5 rounded-lg text-sm outline-none"
+              style={{ backgroundColor: "rgba(255,255,255,0.04)", border: "1px solid var(--darkside-border)", color: "var(--text-primary)" }}
             />
-            {query.trim().length >= 2 && (
-              <button
-                type="button"
-                onClick={() =>
-                  setSelected({
-                    id: `manual-${query.trim().toLowerCase().replace(/\s+/g, "-")}`,
-                    display_name: query.trim(),
-                  })
-                }
-                className="mt-3 w-full text-left rounded-lg px-4 py-3 text-sm transition-all"
-                style={{ backgroundColor: "rgba(255,255,255,0.03)", border: "1px dashed var(--border)", color: "var(--text-primary)" }}
-              >
-                Use &quot;<strong>{query.trim()}</strong>&quot; as the profile to feature →
-              </button>
+            {searching && (
+              <div className="mt-2 text-xs" style={{ color: "var(--text-secondary)" }}>Searching...</div>
             )}
-          </>
+            {results.length > 0 && !searching && (
+              <div className="mt-2 space-y-1.5">
+                {results.map((p) => (
+                  <ProfileSearchResult key={p.id} profile={p} onSelect={() => { setSelected(p); setResults([]); setQuery(""); }} />
+                ))}
+              </div>
+            )}
+            {query.trim().length >= 2 && results.length === 0 && !searching && (
+              <div className="mt-2 text-xs" style={{ color: "var(--text-secondary)" }}>
+                No approved profiles found. The scammer must be in the registry first.{" "}
+                <a href="/submit" style={{ color: "#ccff00", textDecoration: "underline" }}>Submit a report →</a>
+              </div>
+            )}
+          </div>
         )}
       </section>
 
-      {/* Step 2 */}
+      {/* Step 2 — tier */}
       <section
         className="rounded-2xl p-5 mb-6"
         style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)" }}
@@ -201,13 +312,13 @@ function PromoteInner() {
                 onClick={() => setTierId(t.id)}
                 className="relative text-left rounded-xl p-4 transition-all"
                 style={{
-                  backgroundColor: on ? t.color : "rgba(255,255,255,0.03)",
-                  border: on ? `1.5px solid ${t.border}` : "1px solid var(--border)",
+                  backgroundColor: on ? "rgba(245,158,11,0.1)" : "rgba(255,255,255,0.03)",
+                  border: on ? "1.5px solid rgba(245,158,11,0.5)" : "1px solid var(--border)",
                 }}
               >
                 {t.popular && (
                   <div
-                    className="absolute -top-2 left-1/2 -translate-x-1/2 text-[9px] font-black px-2 py-0.5 rounded"
+                    className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[9px] font-black px-2 py-0.5 rounded whitespace-nowrap"
                     style={{ backgroundColor: "#ccff00", color: "#0b0c10" }}
                   >
                     MOST POPULAR
@@ -217,10 +328,10 @@ function PromoteInner() {
                 <div className="text-sm font-black mb-1" style={{ color: "var(--text-primary)" }}>
                   {t.label}
                 </div>
-                <div className="text-xs mb-2" style={{ color: "var(--text-secondary)" }}>
+                <div className="text-xs mb-3" style={{ color: "var(--text-secondary)" }}>
                   {t.desc}
                 </div>
-                <div className="text-lg font-black" style={{ color: t.textColor }}>
+                <div className="text-xl font-black" style={{ color: on ? "#f59e0b" : "#ccff00" }}>
                   ${t.price}
                 </div>
               </button>
@@ -229,66 +340,72 @@ function PromoteInner() {
         </div>
       </section>
 
-      {/* Summary */}
+      {/* Order summary */}
       {selected && tier && (
         <section
           className="rounded-2xl p-5 mb-6"
           style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)" }}
         >
-          <h2 className="text-sm font-black mb-4" style={{ color: "var(--text-primary)" }}>
-            ★ Order Summary
-          </h2>
+          <h2 className="text-sm font-black mb-4" style={{ color: "var(--text-primary)" }}>★ Order Summary</h2>
           <div className="space-y-2 text-xs" style={{ color: "var(--text-secondary)" }}>
             <div className="flex justify-between">
               <span>Profile</span>
-              <span className="font-bold" style={{ color: "var(--text-primary)" }}>
-                {selected.display_name}
-              </span>
+              <span className="font-bold" style={{ color: "var(--text-primary)" }}>{selected.display_name}</span>
             </div>
             <div className="flex justify-between">
               <span>Duration</span>
-              <span className="font-bold" style={{ color: "var(--text-primary)" }}>
-                {tier.label}
-              </span>
+              <span className="font-bold" style={{ color: "var(--text-primary)" }}>{tier.label} ({tier.duration})</span>
             </div>
             <div
               className="flex justify-between pt-2 mt-2 text-sm"
-              style={{ borderTop: "1px solid var(--border)", color: "var(--text-primary)" }}
+              style={{ borderTop: "1px solid var(--border)" }}
             >
-              <span className="font-black">Total</span>
-              <span className="font-black" style={{ color: "#ccff00" }}>
-                ${tier.price}
-              </span>
+              <span className="font-black" style={{ color: "var(--text-primary)" }}>Total</span>
+              <span className="font-black" style={{ color: "#f59e0b" }}>${tier.price}.00 USD</span>
             </div>
           </div>
         </section>
       )}
 
+      {error && (
+        <div
+          className="rounded-lg p-3 text-sm mb-4"
+          style={{ backgroundColor: "rgba(204,0,0,0.1)", border: "1px solid rgba(204,0,0,0.25)", color: "#ff6b6b" }}
+        >
+          {error}
+        </div>
+      )}
+
+      {/* Payment */}
       <button
         type="button"
         onClick={startCheckout}
         disabled={!selected || !tierId || processing}
-        className="w-full py-3 rounded-xl text-sm font-black transition-all disabled:opacity-40"
+        className="w-full py-3.5 rounded-xl text-sm font-black transition-all disabled:opacity-40"
         style={{
           backgroundColor: "rgba(245,158,11,0.14)",
-          border: "1.5px solid rgba(245,158,11,0.45)",
+          border: "1.5px solid rgba(245,158,11,0.5)",
           color: "#f59e0b",
-          boxShadow: "0 0 14px rgba(245,158,11,0.2)",
+          boxShadow: "0 0 18px rgba(245,158,11,0.15)",
         }}
       >
-        {processing ? "Redirecting to Stripe…" : "★ Continue to Stripe Checkout"}
+        {processing
+          ? "Redirecting to Stripe…"
+          : selected && tier
+            ? `★ Pay $${tier.price} — Feature for ${tier.label}`
+            : "★ Select a Profile & Duration to Continue"}
       </button>
 
       <p className="text-[10px] text-center mt-3" style={{ color: "var(--text-secondary)" }}>
-        Secured by Stripe · Instant activation after payment
+        Secured by Stripe · Visa, Mastercard, Amex, Apple Pay · Instant activation after payment
       </p>
 
       <div
         className="rounded-xl p-4 mt-6 text-xs"
-        style={{ backgroundColor: "rgba(245,158,11,0.05)", border: "1px solid rgba(245,158,11,0.2)", color: "var(--text-secondary)" }}
+        style={{ backgroundColor: "rgba(245,158,11,0.04)", border: "1px solid rgba(245,158,11,0.15)", color: "var(--text-secondary)" }}
       >
-        <strong style={{ color: "#f59e0b" }}>Important:</strong> All featured profiles are labeled{" "}
-        <strong>alleged</strong> unless independently verified. Featuring a profile does not change its legal status.
+        <strong style={{ color: "#f59e0b" }}>Important:</strong> Featured profiles remain labeled{" "}
+        <strong>alleged</strong> unless independently verified. Featuring does not affect a profile&apos;s legal status or our editorial decisions.
       </div>
     </div>
   );

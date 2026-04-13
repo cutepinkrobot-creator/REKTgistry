@@ -562,28 +562,39 @@ function useCountUp(target: number, duration = 1800) {
   const [value, setValue] = useState(0);
   const started = useRef(false);
   const ref = useRef<HTMLDivElement>(null);
+  const isVisible = useRef(false);
 
+  // Track visibility separately so we can trigger when data arrives
   useEffect(() => {
-    if (target === 0) return;
     const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !started.current) {
-          started.current = true;
-          const start = performance.now();
-          function tick(now: number) {
-            const elapsed = now - start;
-            const progress = Math.min(elapsed / duration, 1);
-            const eased = 1 - Math.pow(1 - progress, 3);
-            setValue(Math.round(eased * target));
-            if (progress < 1) requestAnimationFrame(tick);
-          }
-          requestAnimationFrame(tick);
-        }
-      },
+      ([entry]) => { isVisible.current = entry.isIntersecting; },
       { threshold: 0.2 }
     );
     if (ref.current) observer.observe(ref.current);
     return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (target === 0 || started.current) return;
+    // Wait until visible AND target is real
+    function tryStart() {
+      if (!isVisible.current) {
+        const t = setTimeout(tryStart, 100);
+        return () => clearTimeout(t);
+      }
+      started.current = true;
+      const start = performance.now();
+      function tick(now: number) {
+        const elapsed = now - start;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        setValue(Math.round(eased * target));
+        if (progress < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    }
+    const cancel = tryStart();
+    return typeof cancel === 'function' ? cancel : undefined;
   }, [target, duration]);
 
   return { value, ref };
