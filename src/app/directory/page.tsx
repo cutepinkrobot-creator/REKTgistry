@@ -114,7 +114,7 @@ function ProfileCard({ profile }: { profile: ScammerProfile }) {
               {getInitial(profile.display_name)}
             </div>
             <div>
-              <span className="font-semibold text-sm" style={{ color: 'var(--text-card)' }}>
+              <span className="font-black text-sm" style={{ color: 'var(--text-card)', letterSpacing: '0.03em' }}>
                 {profile.display_name}
               </span>
               {profile.twitter_handle && (
@@ -132,9 +132,10 @@ function ProfileCard({ profile }: { profile: ScammerProfile }) {
 
         {profile.summary && (
           <p
-            className="text-xs mb-3 flex-1"
+            className="mb-3 flex-1"
             style={{
               color: 'var(--text-secondary)',
+              fontSize: '11px',
               display: '-webkit-box',
               WebkitLineClamp: 2,
               WebkitBoxOrient: 'vertical',

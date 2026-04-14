@@ -468,7 +468,7 @@ function DarkSideCard({ p }: { p: Profile }) {
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="font-semibold text-sm" style={{ color: 'var(--text-card)' }}>
+                <span className="font-black text-sm" style={{ color: 'var(--text-card)', letterSpacing: '0.02em' }}>
                   {p.name}
                 </span>
                 {p.verified && <VerifiedIcon className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />}
@@ -490,8 +490,8 @@ function DarkSideCard({ p }: { p: Profile }) {
           </div>
         </div>
         <p
-          className="text-sm mb-3 line-clamp-3 leading-relaxed flex-1"
-          style={{ color: 'var(--text-card)' }}
+          className="mb-3 line-clamp-3 leading-relaxed flex-1"
+          style={{ color: 'var(--text-card)', fontSize: '11px' }}
         >
           {p.summary}
         </p>
