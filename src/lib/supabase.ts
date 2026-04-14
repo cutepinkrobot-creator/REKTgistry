@@ -87,6 +87,37 @@ export async function getProfileBySlug(slug: string) {
     .single();
 }
 
+// Get currently featured profiles (featured_until > now)
+export async function getFeaturedProfiles(limit = 3) {
+  const now = new Date().toISOString();
+  return supabase
+    .from('scammer_profiles')
+    .select('*')
+    .eq('status', 'approved')
+    .gt('featured_until', now)
+    .order('featured_until', { ascending: false })
+    .limit(limit);
+}
+
+// Get profile by ID (UUID) or slug
+export async function getProfileBySlugOrId(slugOrId: string) {
+  // Try slug first
+  const bySlug = await supabase
+    .from('scammer_profiles')
+    .select('*')
+    .eq('slug', slugOrId)
+    .eq('status', 'approved')
+    .maybeSingle();
+  if (bySlug.data) return bySlug;
+  // Fallback to id
+  return supabase
+    .from('scammer_profiles')
+    .select('*')
+    .eq('id', slugOrId)
+    .eq('status', 'approved')
+    .maybeSingle();
+}
+
 export async function getTotalStats() {
   const { count } = await supabase
     .from('scammer_profiles')

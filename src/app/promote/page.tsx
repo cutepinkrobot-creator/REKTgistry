@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
-import { getProfiles, ScammerProfile } from "@/lib/supabase";
+import { getProfiles, getFeaturedProfiles, ScammerProfile } from "@/lib/supabase";
 
 type TierId = "24h" | "3d" | "7d";
 
@@ -81,6 +81,99 @@ function ProfileSearchResult({ profile, onSelect }: { profile: ScammerProfile; o
   );
 }
 
+function timeRemaining(until: string): string {
+  const diff = new Date(until).getTime() - Date.now();
+  if (diff <= 0) return "expired";
+  const hrs = Math.floor(diff / 3600000);
+  if (hrs < 24) return `${hrs}h remaining`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d remaining`;
+}
+
+function FeaturedProfileCard({ profile }: { profile: ScammerProfile }) {
+  const remaining = profile.featured_until ? timeRemaining(profile.featured_until) : "";
+  return (
+    <div
+      style={{
+        borderRadius: "14px",
+        padding: "16px",
+        backgroundColor: "rgba(245,158,11,0.05)",
+        border: "1.5px solid rgba(245,158,11,0.25)",
+        display: "flex",
+        flexDirection: "column",
+        gap: "10px",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        <div
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: "50%",
+            backgroundColor: "rgba(55,70,0,0.4)",
+            color: "#ccff00",
+            border: "1px solid rgba(100,130,0,0.4)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "14px",
+            fontWeight: 900,
+            fontFamily: "Orbitron, sans-serif",
+            flexShrink: 0,
+          }}
+        >
+          {profile.display_name?.charAt(0)?.toUpperCase() ?? "?"}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: "13px", fontWeight: 900, color: "var(--text-primary)", fontFamily: "Orbitron, sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {profile.display_name}
+          </div>
+          {profile.twitter_handle && (
+            <div style={{ fontSize: "11px", color: "#5a6080", fontFamily: "Orbitron, sans-serif" }}>
+              @{profile.twitter_handle}
+            </div>
+          )}
+        </div>
+        <div
+          style={{
+            fontSize: "9px",
+            fontWeight: 700,
+            padding: "3px 8px",
+            borderRadius: "5px",
+            backgroundColor: "rgba(245,158,11,0.12)",
+            color: "#f59e0b",
+            border: "1px solid rgba(245,158,11,0.35)",
+            fontFamily: "Orbitron, sans-serif",
+            whiteSpace: "nowrap",
+          }}
+        >
+          ★ FEATURED
+        </div>
+      </div>
+      {profile.summary && (
+        <p
+          style={{
+            fontSize: "11px",
+            color: "var(--text-secondary)",
+            fontFamily: "Orbitron, sans-serif",
+            margin: 0,
+            lineHeight: 1.5,
+            overflow: "hidden",
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+          } as React.CSSProperties}
+        >
+          {profile.summary}
+        </p>
+      )}
+      <div style={{ fontSize: "10px", color: "#f59e0b", fontFamily: "Orbitron, sans-serif", fontWeight: 700 }}>
+        ⏱ {remaining}
+      </div>
+    </div>
+  );
+}
+
 function PromoteInner() {
   const search = useSearchParams();
   const status = search.get("status");
@@ -93,8 +186,17 @@ function PromoteInner() {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [featuredProfiles, setFeaturedProfiles] = useState<ScammerProfile[]>([]);
+  const step1Ref = useRef<HTMLElement | null>(null);
 
   const tier = TIERS.find((t) => t.id === tierId) ?? null;
+
+  // Fetch currently featured profiles on mount
+  useEffect(() => {
+    getFeaturedProfiles(3).then(({ data }) => {
+      setFeaturedProfiles(data ?? []);
+    });
+  }, []);
 
   // Live search Supabase
   useEffect(() => {
@@ -186,6 +288,35 @@ function PromoteInner() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
+
+      {/* Currently Featured — only shown when there are active featured profiles */}
+      {featuredProfiles.length > 0 && (
+        <section className="mb-8">
+          <div className="mb-4 flex items-center gap-2">
+            <span
+              style={{
+                fontSize: "10px",
+                fontWeight: 700,
+                padding: "3px 10px",
+                borderRadius: "6px",
+                backgroundColor: "rgba(245,158,11,0.1)",
+                color: "#f59e0b",
+                border: "1px solid rgba(245,158,11,0.3)",
+                fontFamily: "Orbitron, sans-serif",
+                letterSpacing: "0.08em",
+              }}
+            >
+              ★ CURRENTLY FEATURED
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {featuredProfiles.map((p) => (
+              <FeaturedProfileCard key={p.id} profile={p} />
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Header */}
       <div className="mb-6 text-center">
         <div
@@ -222,6 +353,7 @@ function PromoteInner() {
 
       {/* Step 1 — search */}
       <section
+        ref={step1Ref}
         className="rounded-2xl p-5 mb-6"
         style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)" }}
       >
@@ -285,9 +417,58 @@ function PromoteInner() {
               </div>
             )}
             {query.trim().length >= 2 && results.length === 0 && !searching && (
-              <div className="mt-2 text-xs" style={{ color: "var(--text-secondary)" }}>
-                No approved profiles found. The scammer must be in the registry first.{" "}
-                <a href="/submit" style={{ color: "#ccff00", textDecoration: "underline" }}>Submit a report →</a>
+              <div className="mt-3">
+                <div
+                  style={{
+                    borderRadius: "12px",
+                    padding: "16px 18px",
+                    border: "1.5px dashed rgba(204,255,0,0.2)",
+                    backgroundColor: "rgba(204,255,0,0.03)",
+                  }}
+                >
+                  <div
+                    className="text-sm font-black mb-1.5"
+                    style={{ color: "var(--text-primary)", fontFamily: "Orbitron, sans-serif" }}
+                  >
+                    Not in the registry yet?
+                  </div>
+                  <p className="text-xs mb-4" style={{ color: "var(--text-secondary)", fontFamily: "Orbitron, sans-serif" }}>
+                    You can feature someone as soon as they&apos;re added. Submit a new report first — it takes under 2 minutes.
+                  </p>
+                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                    <a
+                      href="/submit"
+                      className="inline-flex items-center gap-1 text-xs font-black px-4 py-2 rounded-lg"
+                      style={{
+                        backgroundColor: "rgba(204,255,0,0.1)",
+                        border: "1.5px solid rgba(204,255,0,0.3)",
+                        color: "#ccff00",
+                        fontFamily: "Orbitron, sans-serif",
+                        textDecoration: "none",
+                      }}
+                    >
+                      Submit a Report →
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setQuery("");
+                        setResults([]);
+                        step1Ref.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+                      }}
+                      className="inline-flex items-center gap-1 text-xs font-black px-4 py-2 rounded-lg"
+                      style={{
+                        backgroundColor: "rgba(255,255,255,0.04)",
+                        border: "1px solid var(--border)",
+                        color: "var(--text-secondary)",
+                        fontFamily: "Orbitron, sans-serif",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Or feature someone already in the registry ↑
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </div>
