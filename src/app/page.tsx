@@ -719,7 +719,8 @@ export default function HomePage() {
             Scammers operate in the dark. The community fights back. Search our registry before
             trusting anyone in Web3.
           </p>
-          <hr className="saber-red max-w-sm mx-auto mb-8" />
+          <hr className="saber-red max-w-sm mx-auto mb-4" />
+          <p className="text-sm italic mb-8" style={{ color: 'rgba(255,255,255,0.28)' }}>Every rug has a weaver.</p>
           <form className="max-w-xl mx-auto mb-4" action="/directory" method="GET">
             <div className="relative flex items-center">
               <SearchIcon

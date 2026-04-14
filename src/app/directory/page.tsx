@@ -277,9 +277,11 @@ function DirectoryInner() {
             Scammer Directory
           </h1>
           <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-            {total !== null
-              ? `${total.toLocaleString()} alleged reports in the registry`
-              : '12,860+ alleged reports in the registry'}
+            {q && !loading && profiles.length > 0
+              ? <span style={{ color: '#ccff00' }}>Already in the system. As expected.</span>
+              : total !== null
+                ? `${total.toLocaleString()} alleged reports in the registry`
+                : '12,860+ alleged reports in the registry'}
           </p>
         </div>
 
@@ -368,8 +370,9 @@ function DirectoryInner() {
               : (
                 <div className="col-span-3 text-center py-16" style={{ color: 'var(--text-secondary)' }}>
                   <div style={{ fontSize: '48px', marginBottom: '12px' }}>🔍</div>
-                  <p className="font-semibold">No results found</p>
-                  <p className="text-sm mt-1">Try adjusting your search or filters</p>
+                  <p className="font-semibold">No results? Lucky you.</p>
+                  <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.3)' }}>Clean search. Rare thing around here.</p>
+                  <p className="text-xs mt-3">Try adjusting your filters, or <a href="/submit" style={{ color: '#ccff00', textDecoration: 'underline' }}>file a new report</a>.</p>
                 </div>
               )}
         </div>
@@ -461,7 +464,7 @@ export default function DirectoryPage() {
     <Suspense fallback={
       <main className="min-h-screen" style={{ paddingTop: '72px' }}>
         <div className="max-w-7xl mx-auto px-4 py-8 text-center" style={{ color: 'var(--text-secondary)' }}>
-          Loading directory...
+          Pulling the records (not the rug)…
         </div>
       </main>
     }>

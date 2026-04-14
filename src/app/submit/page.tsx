@@ -170,9 +170,10 @@ export default function SubmitPage() {
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/>
           </svg>
         </div>
-        <h1 className="text-2xl font-black mb-3" style={{ color: "var(--text-primary)" }}>Report Submitted</h1>
+        <h1 className="text-2xl font-black mb-2" style={{ color: "var(--text-primary)" }}>Report filed. The receipts don&apos;t lie.</h1>
+        <p className="text-xs font-black mb-3 tracking-widest uppercase" style={{ color: "#ccff00" }}>On the record. Forever.</p>
         <p className="text-sm leading-relaxed mb-8" style={{ color: "var(--text-secondary)" }}>
-          Your report is now in our review queue. The moderation team will review it within 24–48 hours before it goes live in the directory.
+          Now in the moderation queue. The team will review within 24–48 hours before it goes live in the directory.
         </p>
         <a href="/directory" className="inline-flex items-center gap-2 px-5 py-3 text-white rounded-xl text-sm font-bold"
           style={{ backgroundColor: "var(--accent)" }}>
@@ -196,7 +197,7 @@ export default function SubmitPage() {
         </div>
         <h1 className="text-2xl font-black sw-title" style={{ color: "var(--text-primary)" }}>Submit a Report</h1>
         <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
-          All submissions are reviewed before going live. Provide as much evidence as possible.
+          Think you got rekt? You&apos;re probably right. File your receipts — takes under 2 minutes. All submissions reviewed before going live.
         </p>
       </div>
 

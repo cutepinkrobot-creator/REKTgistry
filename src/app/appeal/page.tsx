@@ -189,6 +189,9 @@ function AppealInner() {
         <p className="text-base max-w-xl mx-auto leading-relaxed" style={{ color: "var(--text-secondary)" }}>
           Believe you&apos;ve been incorrectly listed? Present your case to the moderation council.
         </p>
+        <p className="text-sm mt-2 italic" style={{ color: "rgba(255,255,255,0.3)" }}>
+          Think you don&apos;t belong here? Prove it.
+        </p>
       </div>
 
       {profileName && (

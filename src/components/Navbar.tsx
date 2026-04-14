@@ -29,9 +29,12 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14">
 
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2" style={{ textDecoration: 'none' }}>
+        <Link href="/" className="flex flex-col items-start" style={{ textDecoration: 'none' }}>
           <span style={{ fontFamily: 'Orbitron, sans-serif', fontWeight: 900, fontSize: '18px', color: '#ccff00', letterSpacing: '0.08em' }}>
             REKT<span style={{ color: '#ffffff', fontWeight: 700 }}>gistry</span>
+          </span>
+          <span className="hidden md:block" style={{ fontFamily: 'Orbitron, sans-serif', fontSize: '8px', color: 'rgba(255,255,255,0.25)', letterSpacing: '0.12em', marginTop: '1px' }}>
+            DECENTRALIZED TRUST. CENTRALIZED RECEIPTS.
           </span>
         </Link>
 
