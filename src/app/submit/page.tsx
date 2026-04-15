@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import AuthModal from "@/components/AuthModal";
 
 const CATEGORY_OPTIONS = [
   "rug_pull", "phishing", "fake_project", "exit_scam",
@@ -38,6 +40,8 @@ function generateCaptcha() {
 }
 
 export default function SubmitPage() {
+  const { user, loading: authLoading, signOut } = useAuth();
+  const [showAuth, setShowAuth] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -161,6 +165,42 @@ export default function SubmitPage() {
     }
   }
 
+  // Auth gate — show identity verification if not signed in
+  if (!authLoading && !user) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
+        <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} redirectAfter="/submit" />
+        <div className="mb-6 text-center">
+          <div className="inline-flex items-center gap-1.5 text-xs font-black tracking-widest uppercase px-2 py-1 rounded mb-3"
+            style={{ backgroundColor: "rgba(100,95,0,0.12)", color: "#e8ca00", border: "1px solid rgba(200,180,0,0.3)" }}>
+            ◈ STRIKE BACK
+          </div>
+          <h1 className="text-2xl font-black sw-title" style={{ color: "var(--text-primary)" }}>Submit a Report</h1>
+          <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
+            Think you got rekt? You&apos;re probably right. File your receipts — takes under 2 minutes.
+          </p>
+        </div>
+        <div className="rounded-2xl p-8 text-center"
+          style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)" }}>
+          <div className="text-4xl mb-4">🔐</div>
+          <h2 className="text-lg font-black mb-2" style={{ color: "var(--text-primary)" }}>
+            Verify your identity first
+          </h2>
+          <p className="text-sm mb-6 max-w-sm mx-auto leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+            We require a Twitter/X account or email to prevent false reports. Your identity won&apos;t be shown publicly.
+          </p>
+          <button
+            onClick={() => setShowAuth(true)}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-black"
+            style={{ backgroundColor: "rgba(204,255,0,0.09)", border: "1.5px solid rgba(204,255,0,0.3)", color: "#ccff00" }}
+          >
+            Verify Identity to Continue →
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (submitted) {
     return (
       <div className="max-w-lg mx-auto px-4 py-20 text-center">
@@ -189,6 +229,19 @@ export default function SubmitPage() {
       <input name="website_url" value={form.website_url} onChange={(e) => update("website_url", e.target.value)}
         style={{ position: "absolute", opacity: 0, height: 0, pointerEvents: "none" }}
         tabIndex={-1} autoComplete="off" aria-hidden="true" />
+
+      {/* Signed-in banner */}
+      {user && (
+        <div className="flex items-center justify-between rounded-xl px-4 py-2.5 mb-4 text-xs"
+          style={{ backgroundColor: "rgba(204,255,0,0.05)", border: "1px solid rgba(100,130,0,0.3)" }}>
+          <span style={{ color: "rgba(204,255,0,0.7)" }}>
+            ✓ Signed in as <strong style={{ color: "#ccff00" }}>{user.user_metadata?.user_name || user.email}</strong>
+          </span>
+          <button onClick={signOut} className="underline text-xs" style={{ color: "var(--text-secondary)", background: "none", border: "none", cursor: "pointer" }}>
+            Sign out
+          </button>
+        </div>
+      )}
 
       <div className="mb-6">
         <div className="inline-flex items-center gap-1.5 text-xs font-black tracking-widest uppercase px-2 py-1 rounded mb-3"
