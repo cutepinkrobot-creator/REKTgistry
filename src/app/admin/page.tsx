@@ -4,13 +4,14 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase, ScammerProfile } from '@/lib/supabase';
 
-type Tab = 'submissions' | 'disputes' | 'appeals' | 'profiles';
+type Tab = 'submissions' | 'disputes' | 'appeals' | 'profiles' | 'quickadd';
 
 const TABS: { key: Tab; label: string }[] = [
   { key: 'submissions', label: 'Submissions' },
   { key: 'disputes', label: 'Disputes' },
   { key: 'appeals', label: 'Appeals' },
   { key: 'profiles', label: 'All Profiles' },
+  { key: 'quickadd', label: '⚡ Quick Add' },
 ];
 
 const PAGE_SIZE = 20;
@@ -48,6 +49,216 @@ function StatCard({ label, value }: { label: string; value: number | null }) {
         }}
       >
         {value === null ? '—' : value}
+      </div>
+    </div>
+  );
+}
+
+function slugify(text: string) {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .slice(0, 80);
+}
+
+function QuickAddPanel() {
+  const orbitron = 'Orbitron, sans-serif';
+  const [form, setForm] = useState({
+    display_name: '',
+    news_url: '',
+    summary: '',
+    amount_lost_usd: '',
+    incident_date: '',
+    profile_type: 'project' as 'project' | 'person',
+    categories: 'other',
+    twitter_handle: '',
+    chain: '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null);
+  const [cronResult, setCronResult] = useState<string | null>(null);
+  const [cronLoading, setCronLoading] = useState(false);
+
+  function update(k: string, v: string) {
+    setForm(f => ({ ...f, [k]: v }));
+    if (k === 'display_name') {
+      // auto-set suggested slug
+    }
+  }
+
+  async function handleSave() {
+    if (!form.display_name || !form.summary) {
+      setMsg({ text: 'Display name and summary are required.', ok: false });
+      return;
+    }
+    setSaving(true);
+    setMsg(null);
+    try {
+      const slug = slugify(form.display_name) + '-' + (form.incident_date?.slice(0, 7) || new Date().toISOString().slice(0, 7));
+      const { error } = await supabase.from('scammer_profiles').insert({
+        display_name: form.display_name,
+        slug,
+        profile_type: form.profile_type,
+        status: 'approved',
+        categories: [form.categories],
+        summary: form.summary,
+        amount_lost_usd: form.amount_lost_usd ? parseFloat(form.amount_lost_usd) : null,
+        incident_date: form.incident_date || null,
+        verified: true,
+        reports_count: 10,
+        twitter_handle: form.twitter_handle || null,
+        website: form.news_url || null,
+        chain: form.chain || null,
+        aliases: [],
+        wallet_addresses: [],
+      });
+      if (error) throw error;
+      setMsg({ text: `✓ "${form.display_name}" added to registry.`, ok: true });
+      setForm({ display_name: '', news_url: '', summary: '', amount_lost_usd: '', incident_date: '', profile_type: 'project', categories: 'other', twitter_handle: '', chain: '' });
+    } catch (e: unknown) {
+      setMsg({ text: `Error: ${e instanceof Error ? e.message : 'Unknown error'}`, ok: false });
+    }
+    setSaving(false);
+  }
+
+  async function runCron(type: 'zachxbt-rss' | 'chainabuse-sync') {
+    setCronLoading(true);
+    setCronResult(null);
+    try {
+      const res = await fetch(`/api/cron/${type}`, {
+        headers: { 'x-cron-secret': process.env.NEXT_PUBLIC_CRON_SECRET || 'admin-trigger' },
+      });
+      const data = await res.json();
+      setCronResult(JSON.stringify(data, null, 2));
+    } catch (e) {
+      setCronResult('Error: ' + (e instanceof Error ? e.message : 'Unknown'));
+    }
+    setCronLoading(false);
+  }
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%', padding: '9px 12px', borderRadius: 7, fontSize: 13,
+    backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(100,130,0,0.3)',
+    color: '#e2e8f0', fontFamily: orbitron, outline: 'none', boxSizing: 'border-box',
+  };
+  const labelStyle: React.CSSProperties = {
+    display: 'block', fontSize: 10, fontFamily: orbitron, color: '#5a6080',
+    letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 5,
+  };
+
+  return (
+    <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+      {/* Manual quick-add form */}
+      <div style={{ flex: '1 1 480px', background: 'rgba(15,20,0,0.4)', border: '1px solid rgba(100,130,0,0.3)', borderRadius: 12, padding: 24 }}>
+        <div style={{ fontSize: 11, fontFamily: orbitron, color: '#ccff00', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 16 }}>
+          ⚡ Quick Add from News
+        </div>
+
+        <div style={{ display: 'grid', gap: 14 }}>
+          <div>
+            <label style={labelStyle}>Display Name *</label>
+            <input style={inputStyle} value={form.display_name} onChange={e => update('display_name', e.target.value)} placeholder="e.g. Drift Protocol Hack" />
+          </div>
+          <div>
+            <label style={labelStyle}>News Article URL</label>
+            <input style={inputStyle} value={form.news_url} onChange={e => update('news_url', e.target.value)} placeholder="https://..." />
+          </div>
+          <div>
+            <label style={labelStyle}>Summary *</label>
+            <textarea style={{ ...inputStyle, height: 90, resize: 'vertical' }} value={form.summary} onChange={e => update('summary', e.target.value)} placeholder="Paste or write a summary of the incident..." />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label style={labelStyle}>Amount Lost (USD)</label>
+              <input style={inputStyle} type="number" value={form.amount_lost_usd} onChange={e => update('amount_lost_usd', e.target.value)} placeholder="285000000" />
+            </div>
+            <div>
+              <label style={labelStyle}>Incident Date</label>
+              <input style={inputStyle} type="date" value={form.incident_date} onChange={e => update('incident_date', e.target.value)} />
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label style={labelStyle}>Type</label>
+              <select style={inputStyle} value={form.profile_type} onChange={e => update('profile_type', e.target.value)}>
+                <option value="project">Project / Protocol</option>
+                <option value="person">Person / Individual</option>
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>Category</label>
+              <select style={inputStyle} value={form.categories} onChange={e => update('categories', e.target.value)}>
+                <option value="other">Other / Hack</option>
+                <option value="rug_pull">Rug Pull</option>
+                <option value="phishing">Phishing</option>
+                <option value="exit_scam">Exit Scam</option>
+                <option value="pump_and_dump">Pump &amp; Dump</option>
+                <option value="fake_project">Fake Project</option>
+                <option value="social_engineering">Social Engineering</option>
+              </select>
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label style={labelStyle}>Chain</label>
+              <input style={inputStyle} value={form.chain} onChange={e => update('chain', e.target.value)} placeholder="Solana, Ethereum..." />
+            </div>
+            <div>
+              <label style={labelStyle}>Twitter Handle</label>
+              <input style={inputStyle} value={form.twitter_handle} onChange={e => update('twitter_handle', e.target.value)} placeholder="@handle" />
+            </div>
+          </div>
+        </div>
+
+        {msg && (
+          <div style={{ marginTop: 14, padding: '9px 14px', borderRadius: 7, fontSize: 12, fontFamily: orbitron, backgroundColor: msg.ok ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', border: `1px solid ${msg.ok ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`, color: msg.ok ? '#4ade80' : '#f87171' }}>
+            {msg.text}
+          </div>
+        )}
+
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          style={{ marginTop: 16, width: '100%', padding: '11px', borderRadius: 8, fontSize: 13, fontWeight: 700, fontFamily: orbitron, cursor: saving ? 'not-allowed' : 'pointer', backgroundColor: 'rgba(204,255,0,0.1)', border: '1.5px solid rgba(204,255,0,0.35)', color: '#ccff00', opacity: saving ? 0.6 : 1 }}
+        >
+          {saving ? 'Adding...' : '⚡ Add to Registry (Approved)'}
+        </button>
+      </div>
+
+      {/* Cron triggers */}
+      <div style={{ flex: '0 1 320px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ background: 'rgba(15,20,0,0.4)', border: '1px solid rgba(100,130,0,0.3)', borderRadius: 12, padding: 20 }}>
+          <div style={{ fontSize: 11, fontFamily: orbitron, color: '#ccff00', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>
+            🔄 Data Sources
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <button onClick={() => runCron('zachxbt-rss')} disabled={cronLoading}
+              style={{ padding: '10px 14px', borderRadius: 8, fontSize: 12, fontFamily: orbitron, fontWeight: 700, cursor: 'pointer', backgroundColor: 'rgba(74,126,255,0.1)', border: '1px solid rgba(74,126,255,0.3)', color: '#7ba7ff', textAlign: 'left' }}>
+              📡 Pull ZachXBT RSS Feed
+              <div style={{ fontSize: 10, color: '#5a6080', marginTop: 3, fontWeight: 400 }}>Runs auto every 6h · checks last 48h posts</div>
+            </button>
+            <button onClick={() => runCron('chainabuse-sync')} disabled={cronLoading}
+              style={{ padding: '10px 14px', borderRadius: 8, fontSize: 12, fontFamily: orbitron, fontWeight: 700, cursor: 'pointer', backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', color: '#f59e0b', textAlign: 'left' }}>
+              🔗 Sync Chainabuse Reports
+              <div style={{ fontSize: 10, color: '#5a6080', marginTop: 3, fontWeight: 400 }}>Runs auto every 12h · last 7 days</div>
+            </button>
+          </div>
+        </div>
+
+        {cronLoading && (
+          <div style={{ background: 'rgba(15,20,0,0.4)', border: '1px solid rgba(100,130,0,0.2)', borderRadius: 10, padding: 16, fontSize: 12, fontFamily: orbitron, color: '#ccff00' }}>
+            Running...
+          </div>
+        )}
+        {cronResult && (
+          <div style={{ background: 'rgba(15,20,0,0.4)', border: '1px solid rgba(100,130,0,0.2)', borderRadius: 10, padding: 16 }}>
+            <div style={{ fontSize: 10, fontFamily: orbitron, color: '#5a6080', letterSpacing: '0.1em', marginBottom: 8 }}>RESULT</div>
+            <pre style={{ fontSize: 11, color: '#a0b060', fontFamily: 'monospace', whiteSpace: 'pre-wrap', margin: 0 }}>{cronResult}</pre>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -310,8 +521,11 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* Quick Add Panel */}
+        {activeTab === 'quickadd' && <QuickAddPanel />}
+
         {/* Table */}
-        <div
+        {activeTab !== 'quickadd' && <div
           style={{
             background: 'rgba(15,20,0,0.4)',
             border: '1px solid rgba(100,130,0,0.3)',
@@ -478,7 +692,7 @@ export default function AdminDashboard() {
               </table>
             </div>
           )}
-        </div>
+        </div>}
 
         {/* Pagination */}
         {totalPages > 1 && (

@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/zachxbt-rss",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/chainabuse-sync",
+      "schedule": "0 */12 * * *"
+    }
+  ]
+}
