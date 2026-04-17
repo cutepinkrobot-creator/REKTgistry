@@ -101,8 +101,8 @@ registerFont(fontPath, { family: 'Orbitron', weight: 'bold' });
   ctx.fillStyle = '#050507';
   ctx.fillRect(0, 0, W, H);
 
-  // Grid — very subtle
-  ctx.strokeStyle = 'rgba(204,255,0,0.012)';
+  // Grid — visible but clean
+  ctx.strokeStyle = 'rgba(204,255,0,0.055)';
   ctx.lineWidth = 1;
   for (let y = 0; y <= H; y += 50) {
     ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();

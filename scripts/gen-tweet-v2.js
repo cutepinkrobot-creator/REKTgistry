@@ -12,7 +12,7 @@ const BG          = '#050507';           // deeper black
 const DIM         = 'rgba(204,255,0,0.55)';  // small/secondary text
 const DIMMER      = 'rgba(204,255,0,0.38)';  // pun lines / captions
 const SUBHEAD     = 'rgba(204,255,0,0.72)';  // subtitles below big numbers
-const GRID_A      = 0.012;               // grid line opacity
+const GRID_A      = 0.055;               // grid line opacity
 const GLOW_MULTI  = 0.5;                 // multiply all bg glow opacities
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
