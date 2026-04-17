@@ -24,7 +24,7 @@ ctx.letterSpacing = '4px';
 
 // Shadow glow
 ctx.shadowColor = '#ccff00';
-ctx.shadowBlur = 24;
+ctx.shadowBlur = 8;
 ctx.fillText('REKT', 40, H / 2);
 
 // Measure REKT width
@@ -33,7 +33,7 @@ const rektWidth = ctx.measureText('REKT').width;
 // "gistry" in white/light
 ctx.fillStyle = '#e2e8f0';
 ctx.shadowColor = 'rgba(226,232,240,0.3)';
-ctx.shadowBlur = 8;
+ctx.shadowBlur = 3;
 ctx.fillText('gistry', 40 + rektWidth + 4, H / 2);
 
 // Tagline
