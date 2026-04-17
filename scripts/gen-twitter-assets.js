@@ -90,58 +90,57 @@ registerFont(fontPath, { family: 'Orbitron', weight: 'bold' });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// COVER PHOTO  1500×500
+// COVER PHOTO  1500×500  (v2 — deeper black, lower glow, green secondary text)
 // ─────────────────────────────────────────────────────────────────────────────
 {
   const W = 1500, H = 500;
   const c = createCanvas(W, H);
   const ctx = c.getContext('2d');
 
-  // Background
-  ctx.fillStyle = '#0b0c10';
+  // Background — near pure black
+  ctx.fillStyle = '#050507';
   ctx.fillRect(0, 0, W, H);
 
-  // Subtle grid lines (horizontal)
-  ctx.strokeStyle = 'rgba(204,255,0,0.04)';
+  // Grid — very subtle
+  ctx.strokeStyle = 'rgba(204,255,0,0.012)';
   ctx.lineWidth = 1;
   for (let y = 0; y <= H; y += 50) {
     ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
   }
-  // Vertical
   for (let x = 0; x <= W; x += 50) {
     ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
   }
 
-  // Left radial glow (logo area)
+  // Left radial glow — halved
   const grd = ctx.createRadialGradient(420, H / 2, 0, 420, H / 2, 340);
-  grd.addColorStop(0, 'rgba(204,255,0,0.12)');
+  grd.addColorStop(0, 'rgba(204,255,0,0.06)');
   grd.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = grd;
   ctx.fillRect(0, 0, W, H);
 
-  // Right accent glow
+  // Right accent glow — halved
   const grd2 = ctx.createRadialGradient(W - 200, H / 2, 0, W - 200, H / 2, 280);
-  grd2.addColorStop(0, 'rgba(74,126,255,0.07)');
+  grd2.addColorStop(0, 'rgba(74,126,255,0.035)');
   grd2.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = grd2;
   ctx.fillRect(0, 0, W, H);
 
-  // Crosshair rings on left (behind logo)
+  // Crosshair rings — more subtle
   const CX = 420, CY = H / 2;
   [200, 145, 95, 52].forEach((r, i) => {
     ctx.beginPath();
     ctx.arc(CX, CY, r, 0, Math.PI * 2);
-    ctx.strokeStyle = `rgba(204,255,0,${0.05 + i * 0.02})`;
+    ctx.strokeStyle = `rgba(204,255,0,${0.025 + i * 0.012})`;
     ctx.lineWidth = 1;
     ctx.stroke();
   });
-  ctx.strokeStyle = 'rgba(204,255,0,0.06)';
+  ctx.strokeStyle = 'rgba(204,255,0,0.03)';
   ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(0, CY); ctx.lineTo(840, CY); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(CX, 0); ctx.lineTo(CX, H); ctx.stroke();
 
   // Vertical separator line
-  ctx.strokeStyle = 'rgba(204,255,0,0.15)';
+  ctx.strokeStyle = 'rgba(204,255,0,0.10)';
   ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.moveTo(840, 60); ctx.lineTo(840, H - 60); ctx.stroke();
 
@@ -149,14 +148,13 @@ registerFont(fontPath, { family: 'Orbitron', weight: 'bold' });
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.shadowColor = '#ccff00';
-  ctx.shadowBlur = 8;
+  ctx.shadowBlur = 4;
   ctx.fillStyle = '#ccff00';
   ctx.font = 'bold 168px Orbitron';
   ctx.fillText('REKT', CX, CY - 40);
 
-  ctx.shadowColor = 'rgba(255,255,255,0.15)';
-  ctx.shadowBlur = 4;
-  ctx.fillStyle = '#d0d8e8';
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = 'rgba(204,255,0,0.65)';
   ctx.font = 'bold 72px Orbitron';
   ctx.fillText('gistry', CX, CY + 70);
 
@@ -171,48 +169,48 @@ registerFont(fontPath, { family: 'Orbitron', weight: 'bold' });
   const bw = ctx.measureText(badgeText).width + 28;
   const bh = 26;
   const bx = RX - bw / 2, by = CY - 120;
-  ctx.strokeStyle = 'rgba(204,255,0,0.35)';
+  ctx.strokeStyle = 'rgba(204,255,0,0.28)';
   ctx.lineWidth = 1;
   ctx.strokeRect(bx, by, bw, bh);
-  ctx.fillStyle = 'rgba(204,255,0,0.07)';
+  ctx.fillStyle = 'rgba(204,255,0,0.06)';
   ctx.fillRect(bx, by, bw, bh);
   ctx.fillStyle = '#ccff00';
   ctx.fillText(badgeText, RX, by + bh / 2);
 
   // Main tagline
-  ctx.shadowColor = 'rgba(255,255,255,0.1)';
-  ctx.shadowBlur = 3;
+  ctx.shadowBlur = 0;
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 38px Orbitron';
   ctx.fillText('Decentralized trust.', RX, CY - 50);
   ctx.fillText('Centralized receipts.', RX, CY + 2);
 
-  // Sub tagline
-  ctx.shadowBlur = 0;
-  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  // Sub tagline — neon green instead of faded white
+  ctx.fillStyle = 'rgba(204,255,0,0.55)';
   ctx.font = 'bold 16px Orbitron';
   ctx.fillText('Every rug has a weaver.', RX, CY + 58);
 
-  // URL
-  ctx.fillStyle = 'rgba(204,255,0,0.55)';
+  // URL — full lime
+  ctx.fillStyle = '#ccff00';
   ctx.font = 'bold 18px Orbitron';
-  ctx.fillText('rektgistry.com', RX, CY + 110);
+  ctx.fillText('REKTgistry.com', RX, CY + 110);
 
-  // Bottom red saber line
+  // Bottom saber line — toned down
   const lineY = H - 22;
   const linGrd = ctx.createLinearGradient(0, 0, W, 0);
-  linGrd.addColorStop(0, 'rgba(204,255,0,0)');
-  linGrd.addColorStop(0.2, 'rgba(204,255,0,0.6)');
-  linGrd.addColorStop(0.5, 'rgba(204,255,0,0.9)');
-  linGrd.addColorStop(0.8, 'rgba(204,255,0,0.6)');
-  linGrd.addColorStop(1, 'rgba(204,255,0,0)');
+  linGrd.addColorStop(0,   'rgba(204,255,0,0)');
+  linGrd.addColorStop(0.2, 'rgba(204,255,0,0.45)');
+  linGrd.addColorStop(0.5, 'rgba(204,255,0,0.65)');
+  linGrd.addColorStop(0.8, 'rgba(204,255,0,0.45)');
+  linGrd.addColorStop(1,   'rgba(204,255,0,0)');
   ctx.strokeStyle = linGrd;
   ctx.lineWidth = 2;
   ctx.shadowColor = '#ccff00';
-  ctx.shadowBlur = 4;
+  ctx.shadowBlur = 3;
   ctx.beginPath(); ctx.moveTo(0, lineY); ctx.lineTo(W, lineY); ctx.stroke();
+  ctx.shadowBlur = 0;
 
-  const out = path.join(__dirname, '../public/rektgistry-twitter-cover.png');
-  fs.writeFileSync(out, c.toBuffer('image/png'));
-  console.log('✓ Cover saved:', out);
+  // Save both v2 (for compare) and overwrite original
+  const outV2 = path.join(__dirname, '../public/rektgistry-twitter-cover-v2.png');
+  fs.writeFileSync(outV2, c.toBuffer('image/png'));
+  console.log('✓ Cover v2 saved:', outV2);
 }

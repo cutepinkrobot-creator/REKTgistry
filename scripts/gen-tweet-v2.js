@@ -84,7 +84,7 @@ function drawBottomBar(ctx, accentColor, rightText) {
   ctx.textAlign = 'left';
   ctx.shadowColor = '#ccff00'; ctx.shadowBlur = 3;
   ctx.fillStyle = '#ccff00'; ctx.font = 'bold 20px Orbitron';
-  ctx.fillText('rektgistry.com', 52, H - 35);
+  ctx.fillText('REKTgistry.com', 52, H - 35);
   ctx.shadowBlur = 0;
   ctx.textAlign = 'right';
   ctx.fillStyle = DIM; ctx.font = 'bold 13px Orbitron';
@@ -151,7 +151,7 @@ function drawStatPills(ctx, stats, py, accentColor, pillW) {
   ctx.textAlign = 'left';
   ctx.shadowColor = '#ccff00'; ctx.shadowBlur = 3;
   ctx.fillStyle = '#ccff00'; ctx.font = 'bold 20px Orbitron';
-  ctx.fillText('rektgistry.com', 52, H - 35);
+  ctx.fillText('REKTgistry.com', 52, H - 35);
   ctx.shadowBlur = 0;
   ctx.textAlign = 'right';
   ctx.fillStyle = DIM; ctx.font = 'bold 13px Orbitron';
