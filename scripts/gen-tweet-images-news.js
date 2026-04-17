@@ -33,17 +33,20 @@ function drawBackground(ctx, glowColor1, glowColor2) {
 
 // ── Helper: draw REKT logo top-left ──────────────────────────────────────────
 function drawLogo(ctx) {
-  ctx.textBaseline = 'middle';
+  ctx.textBaseline = 'alphabetic';
   ctx.textAlign = 'left';
+  // "REKT" — large, neon lime
   ctx.shadowColor = '#ccff00';
-  ctx.shadowBlur = 6;
+  ctx.shadowBlur = 8;
   ctx.fillStyle = '#ccff00';
-  ctx.font = 'bold 52px Orbitron';
-  ctx.fillText('REKT', 52, 54);
-  ctx.shadowBlur = 3;
+  ctx.font = 'bold 44px Orbitron';
+  ctx.fillText('REKT', 52, 52);
+  // "gistry" — smaller, slate, stacked directly below
+  ctx.shadowColor = 'rgba(255,255,255,0.2)';
+  ctx.shadowBlur = 2;
   ctx.fillStyle = '#d0d8e8';
-  ctx.font = 'bold 28px Orbitron';
-  ctx.fillText('gistry', 170, 58);
+  ctx.font = 'bold 20px Orbitron';
+  ctx.fillText('gistry', 54, 74);
   ctx.shadowBlur = 0;
 }
 
