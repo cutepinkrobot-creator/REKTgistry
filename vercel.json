@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/chainabuse-sync",
       "schedule": "0 */12 * * *"
+    },
+    {
+      "path": "/api/cron/twitter-monitor",
+      "schedule": "0 */4 * * *"
     }
   ]
 }

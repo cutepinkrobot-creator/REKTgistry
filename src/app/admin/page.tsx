@@ -124,7 +124,7 @@ function QuickAddPanel() {
     setSaving(false);
   }
 
-  async function runCron(type: 'zachxbt-rss' | 'chainabuse-sync') {
+  async function runCron(type: 'zachxbt-rss' | 'chainabuse-sync' | 'twitter-monitor') {
     setCronLoading(true);
     setCronResult(null);
     try {
@@ -244,6 +244,11 @@ function QuickAddPanel() {
               style={{ padding: '10px 14px', borderRadius: 8, fontSize: 12, fontFamily: orbitron, fontWeight: 700, cursor: 'pointer', backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', color: '#f59e0b', textAlign: 'left' }}>
               🔗 Sync Chainabuse Reports
               <div style={{ fontSize: 10, color: '#5a6080', marginTop: 3, fontWeight: 400 }}>Runs auto every 12h · last 7 days</div>
+            </button>
+            <button onClick={() => runCron('twitter-monitor')} disabled={cronLoading}
+              style={{ padding: '10px 14px', borderRadius: 8, fontSize: 12, fontFamily: orbitron, fontWeight: 700, cursor: 'pointer', backgroundColor: 'rgba(29,161,242,0.08)', border: '1px solid rgba(29,161,242,0.25)', color: '#1da1f2', textAlign: 'left' }}>
+              🐦 Scan Twitter Feeds
+              <div style={{ fontSize: 10, color: '#5a6080', marginTop: 3, fontWeight: 400 }}>@jeremybtc · @mastrXYZ · runs every 4h</div>
             </button>
           </div>
         </div>
