@@ -29,17 +29,21 @@ export async function POST(request: Request) {
     }
 
     const supabase = getSupabase();
-    const { error } = await supabase.from("appeals").insert({
+
+    // Build insert object — only include payment fields if columns exist
+    const record: Record<string, unknown> = {
       profile_slug: profile_slug.trim(),
       appellant_name: appellant_name.trim(),
       appellant_email: appellant_email.trim().toLowerCase(),
       reason: reason.trim(),
       evidence: evidence?.trim() || null,
-      payment_method: payment_method || null,
-      payment_id: payment_id || null,
       status: "pending",
       created_at: new Date().toISOString(),
-    });
+    };
+    if (payment_method) record.payment_method = payment_method;
+    if (payment_id) record.payment_id = payment_id;
+
+    const { error } = await supabase.from("appeals").insert(record);
 
     if (error) {
       console.error("[api/appeal] Supabase error:", error);
