@@ -39,12 +39,33 @@ function isFeatured(featured_until: string | null): boolean {
   return new Date(featured_until) > new Date();
 }
 
+type ConfidenceTier = { label: string; color: string; bg: string; border: string };
+function getConfidenceTier(profile: ScammerProfile): ConfidenceTier {
+  if (profile.verified) {
+    return { label: "✓ VERIFIED", color: "#39ff14", bg: "rgba(57,255,20,0.1)", border: "rgba(57,255,20,0.35)" };
+  }
+  const hasTx = Array.isArray(profile.tx_hashes) && profile.tx_hashes.length > 0;
+  const hasEvidence = Array.isArray(profile.evidence_urls) && profile.evidence_urls.length > 0;
+  if (hasTx || hasEvidence) {
+    return { label: "◈ EVIDENCE-SUPPORTED", color: "#60a5fa", bg: "rgba(96,165,250,0.1)", border: "rgba(96,165,250,0.3)" };
+  }
+  return { label: "○ UNVERIFIED", color: "#6b7280", bg: "rgba(107,114,128,0.08)", border: "rgba(107,114,128,0.2)" };
+}
+
 // ── Comment types ────────────────────────────────────────────────────────────
 interface Comment {
   id: string;
   profile_id: string;
   content: string;
   nickname: string | null;
+  created_at: string;
+}
+
+interface Rebuttal {
+  id: string;
+  profile_id: string;
+  name: string | null;
+  content: string;
   created_at: string;
 }
 
@@ -225,6 +246,16 @@ export default function ProfilePage({ params }: { params: Promise<{ slug: string
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
+  // rebuttal
+  const [rebuttals, setRebuttals] = useState<Rebuttal[]>([]);
+  const [rebuttalContent, setRebuttalContent] = useState("");
+  const [rebuttalName, setRebuttalName] = useState("");
+  const [rebuttalEmail, setRebuttalEmail] = useState("");
+  const [rebuttalSubmitting, setRebuttalSubmitting] = useState(false);
+  const [rebuttalError, setRebuttalError] = useState<string | null>(null);
+  const [rebuttalSuccess, setRebuttalSuccess] = useState(false);
+  const [showRebuttalForm, setShowRebuttalForm] = useState(false);
+
   // Show/hide full alias/wallet lists
   const [showAllAliases, setShowAllAliases] = useState(false);
   const [showAllWallets, setShowAllWallets] = useState(false);
@@ -247,6 +278,16 @@ export default function ProfilePage({ params }: { params: Promise<{ slug: string
         if (json.ok) setComments(json.comments ?? []);
       })
       .finally(() => setCommentsLoading(false));
+  }, [profile?.id]);
+
+  // Fetch rebuttals
+  useEffect(() => {
+    if (!profile?.id) return;
+    fetch(`/api/rebuttal?profile_id=${profile.id}`)
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.ok) setRebuttals(json.rebuttals ?? []);
+      });
   }, [profile?.id]);
 
   async function submitComment(e: React.FormEvent) {
@@ -279,6 +320,39 @@ export default function ProfilePage({ params }: { params: Promise<{ slug: string
     }
   }
 
+  async function submitRebuttal(e: React.FormEvent) {
+    e.preventDefault();
+    if (rebuttalSubmitting) return;
+    setRebuttalError(null);
+    setRebuttalSubmitting(true);
+    try {
+      const res = await fetch("/api/rebuttal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          profile_id: profile!.id,
+          name: rebuttalName.trim() || null,
+          email: rebuttalEmail.trim() || null,
+          content: rebuttalContent.trim(),
+        }),
+      });
+      const json = await res.json();
+      if (!json.ok) {
+        setRebuttalError(json.error ?? "Failed to submit rebuttal.");
+      } else {
+        setRebuttalSuccess(true);
+        setRebuttalContent("");
+        setRebuttalName("");
+        setRebuttalEmail("");
+        setShowRebuttalForm(false);
+      }
+    } catch {
+      setRebuttalError("Something went wrong. Please try again.");
+    } finally {
+      setRebuttalSubmitting(false);
+    }
+  }
+
   // Loading
   if (profile === undefined) return <ProfileSkeleton />;
 
@@ -286,6 +360,7 @@ export default function ProfilePage({ params }: { params: Promise<{ slug: string
   if (profile === null) return <NotFound />;
 
   const featured = isFeatured(profile.featured_until);
+  const confidenceTier = getConfidenceTier(profile);
   const aliases = profile.aliases ?? [];
   const wallets = profile.wallet_addresses ?? [];
   const categories = profile.categories ?? [];
@@ -308,12 +383,39 @@ export default function ProfilePage({ params }: { params: Promise<{ slug: string
             color: "var(--text-secondary)",
             textDecoration: "none",
             fontFamily: "Orbitron, sans-serif",
-            marginBottom: "24px",
+            marginBottom: "16px",
             letterSpacing: "0.04em",
           }}
         >
           ← Registry
         </Link>
+
+        {/* Disclaimer banner */}
+        <div
+          style={{
+            borderRadius: "10px",
+            padding: "12px 16px",
+            marginBottom: "20px",
+            backgroundColor: "rgba(245,158,11,0.05)",
+            border: "1px solid rgba(245,158,11,0.2)",
+            display: "flex",
+            alignItems: "flex-start",
+            gap: "10px",
+          }}
+        >
+          <span style={{ fontSize: "14px", flexShrink: 0, marginTop: "1px" }}>⚖️</span>
+          <p style={{ fontSize: "11px", color: "var(--text-secondary)", fontFamily: "Orbitron, sans-serif", margin: 0, lineHeight: 1.6 }}>
+            <strong style={{ color: "#f59e0b" }}>Disclaimer:</strong> All profiles on REKTgistry are based on community-submitted reports and public on-chain data.
+            All allegations are unverified unless marked otherwise. This is not legal advice. If you believe a profile is inaccurate, you may{" "}
+            <button
+              onClick={() => setShowRebuttalForm(true)}
+              style={{ color: "#f59e0b", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "Orbitron, sans-serif", fontSize: "11px", fontWeight: 700, textDecoration: "underline" }}
+            >
+              submit a rebuttal
+            </button>
+            .
+          </p>
+        </div>
 
         {/* Profile header */}
         <div style={{ display: "flex", alignItems: "flex-start", gap: "20px", marginBottom: "24px", flexWrap: "wrap" }}>
@@ -356,23 +458,22 @@ export default function ProfilePage({ params }: { params: Promise<{ slug: string
 
             {/* Badges */}
             <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "10px" }}>
-              {profile.verified && (
-                <span
-                  style={{
-                    fontSize: "10px",
-                    fontWeight: 700,
-                    padding: "3px 10px",
-                    borderRadius: "6px",
-                    backgroundColor: "rgba(57,255,20,0.1)",
-                    color: "#39ff14",
-                    border: "1px solid rgba(57,255,20,0.35)",
-                    fontFamily: "Orbitron, sans-serif",
-                    letterSpacing: "0.08em",
-                  }}
-                >
-                  ✓ VERIFIED
-                </span>
-              )}
+              {/* Confidence tier badge */}
+              <span
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 700,
+                  padding: "3px 10px",
+                  borderRadius: "6px",
+                  backgroundColor: confidenceTier.bg,
+                  color: confidenceTier.color,
+                  border: `1px solid ${confidenceTier.border}`,
+                  fontFamily: "Orbitron, sans-serif",
+                  letterSpacing: "0.08em",
+                }}
+              >
+                {confidenceTier.label}
+              </span>
               {featured && (
                 <span
                   style={{
@@ -1009,6 +1110,228 @@ export default function ProfilePage({ params }: { params: Promise<{ slug: string
                 <CommentCard key={c.id} comment={c} />
               ))}
             </div>
+          )}
+        </section>
+
+        {/* Rebuttal section */}
+        <section style={{ marginTop: "40px" }}>
+          <hr style={{ border: "none", borderTop: "1px solid rgba(245,158,11,0.15)", marginBottom: "32px" }} />
+
+          <div style={{ marginBottom: "20px" }}>
+            <h2
+              style={{
+                fontSize: "18px",
+                fontWeight: 900,
+                color: "var(--text-primary)",
+                fontFamily: "Orbitron, sans-serif",
+                margin: "0 0 4px",
+              }}
+            >
+              ⚖️ Subject Rebuttals
+            </h2>
+            <p style={{ fontSize: "12px", color: "var(--text-secondary)", fontFamily: "Orbitron, sans-serif", margin: 0 }}>
+              If you are the subject of this profile and believe it contains inaccurate information, you can submit a rebuttal. All rebuttals are reviewed before publication.
+            </p>
+          </div>
+
+          {/* Existing rebuttals */}
+          {rebuttals.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "24px" }}>
+              {rebuttals.map((r) => (
+                <div
+                  key={r.id}
+                  style={{
+                    borderRadius: "10px",
+                    padding: "14px 16px",
+                    backgroundColor: "rgba(245,158,11,0.04)",
+                    border: "1px solid rgba(245,158,11,0.2)",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "6px",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 700, color: "#f59e0b", fontFamily: "Orbitron, sans-serif" }}>
+                      ⚖️ {r.name || "Subject Response"}
+                    </span>
+                    <span style={{ fontSize: "10px", color: "var(--text-secondary)", fontFamily: "Orbitron, sans-serif" }}>
+                      {formatRelative(r.created_at)}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: "13px", color: "var(--text-primary)", fontFamily: "Orbitron, sans-serif", lineHeight: 1.6, margin: 0 }}>
+                    {r.content}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Rebuttal success */}
+          {rebuttalSuccess && (
+            <div
+              style={{
+                borderRadius: "10px",
+                padding: "14px 16px",
+                backgroundColor: "rgba(57,255,20,0.06)",
+                border: "1px solid rgba(57,255,20,0.2)",
+                fontSize: "13px",
+                color: "#39ff14",
+                fontFamily: "Orbitron, sans-serif",
+                marginBottom: "16px",
+              }}
+            >
+              ✓ Rebuttal submitted. Our team will review it within 48 hours before it goes live.
+            </div>
+          )}
+
+          {/* Rebuttal toggle */}
+          {!showRebuttalForm && !rebuttalSuccess && (
+            <button
+              onClick={() => setShowRebuttalForm(true)}
+              style={{
+                padding: "10px 20px",
+                borderRadius: "10px",
+                backgroundColor: "rgba(245,158,11,0.08)",
+                border: "1.5px solid rgba(245,158,11,0.3)",
+                color: "#f59e0b",
+                fontFamily: "Orbitron, sans-serif",
+                fontSize: "12px",
+                fontWeight: 900,
+                cursor: "pointer",
+              }}
+            >
+              I am the subject — submit a rebuttal →
+            </button>
+          )}
+
+          {/* Rebuttal form */}
+          {showRebuttalForm && !rebuttalSuccess && (
+            <form onSubmit={submitRebuttal}>
+              <div
+                style={{
+                  borderRadius: "14px",
+                  padding: "20px",
+                  backgroundColor: "rgba(245,158,11,0.04)",
+                  border: "1.5px solid rgba(245,158,11,0.25)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "12px",
+                }}
+              >
+                <p style={{ fontSize: "11px", color: "var(--text-secondary)", fontFamily: "Orbitron, sans-serif", margin: 0 }}>
+                  This rebuttal will be reviewed by our team before it appears publicly. Include your contact email so we can verify your identity and follow up.
+                </p>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                  <input
+                    type="text"
+                    value={rebuttalName}
+                    onChange={(e) => setRebuttalName(e.target.value)}
+                    placeholder="Your name or company"
+                    style={{
+                      padding: "10px 12px",
+                      borderRadius: "8px",
+                      backgroundColor: "rgba(255,255,255,0.04)",
+                      border: "1px solid rgba(245,158,11,0.2)",
+                      color: "var(--text-primary)",
+                      fontFamily: "Orbitron, sans-serif",
+                      fontSize: "13px",
+                      outline: "none",
+                    }}
+                  />
+                  <input
+                    type="email"
+                    value={rebuttalEmail}
+                    onChange={(e) => setRebuttalEmail(e.target.value)}
+                    placeholder="Contact email (private)"
+                    style={{
+                      padding: "10px 12px",
+                      borderRadius: "8px",
+                      backgroundColor: "rgba(255,255,255,0.04)",
+                      border: "1px solid rgba(245,158,11,0.2)",
+                      color: "var(--text-primary)",
+                      fontFamily: "Orbitron, sans-serif",
+                      fontSize: "13px",
+                      outline: "none",
+                    }}
+                  />
+                </div>
+
+                <textarea
+                  value={rebuttalContent}
+                  onChange={(e) => setRebuttalContent(e.target.value.slice(0, 1000))}
+                  placeholder="Explain why you believe this profile is inaccurate. Include any evidence, context, or supporting links."
+                  rows={5}
+                  style={{
+                    width: "100%",
+                    resize: "vertical",
+                    padding: "12px 14px",
+                    borderRadius: "8px",
+                    backgroundColor: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(245,158,11,0.2)",
+                    color: "var(--text-primary)",
+                    fontFamily: "Orbitron, sans-serif",
+                    fontSize: "13px",
+                    outline: "none",
+                    minHeight: "120px",
+                  }}
+                />
+
+                <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowRebuttalForm(false)}
+                    style={{
+                      padding: "10px 16px",
+                      borderRadius: "8px",
+                      backgroundColor: "transparent",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      color: "var(--text-secondary)",
+                      fontFamily: "Orbitron, sans-serif",
+                      fontSize: "12px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={rebuttalSubmitting || rebuttalContent.trim().length < 20}
+                    style={{
+                      padding: "10px 20px",
+                      borderRadius: "8px",
+                      backgroundColor: "rgba(245,158,11,0.12)",
+                      border: "1.5px solid rgba(245,158,11,0.4)",
+                      color: "#f59e0b",
+                      fontFamily: "Orbitron, sans-serif",
+                      fontSize: "12px",
+                      fontWeight: 900,
+                      cursor: "pointer",
+                      opacity: rebuttalSubmitting || rebuttalContent.trim().length < 20 ? 0.4 : 1,
+                    }}
+                  >
+                    {rebuttalSubmitting ? "Submitting…" : "Submit Rebuttal →"}
+                  </button>
+                </div>
+
+                {rebuttalError && (
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      color: "#ff6b6b",
+                      fontFamily: "Orbitron, sans-serif",
+                      padding: "8px 12px",
+                      borderRadius: "6px",
+                      backgroundColor: "rgba(204,0,0,0.08)",
+                      border: "1px solid rgba(204,0,0,0.2)",
+                    }}
+                  >
+                    {rebuttalError}
+                  </div>
+                )}
+              </div>
+            </form>
           )}
         </section>
 

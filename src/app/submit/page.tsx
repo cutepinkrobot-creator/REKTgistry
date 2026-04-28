@@ -51,6 +51,8 @@ export default function SubmitPage() {
   const [captcha] = useState(generateCaptcha);
   const [captchaAnswer, setCaptchaAnswer] = useState("");
   const [twitterVerified, setTwitterVerified] = useState(false);
+  const [confirmedTruthful, setConfirmedTruthful] = useState(false);
+  const [confirmedLiability, setConfirmedLiability] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
@@ -123,6 +125,18 @@ export default function SubmitPage() {
 
     if (!form.reporter_twitter.trim() && !form.reporter_email.trim()) {
       setError("Please provide either your Twitter handle or email so we can follow up.");
+      return;
+    }
+
+    const hasTxHash = form.tx_hashes.split(",").map((s) => s.trim()).filter(Boolean).length > 0;
+    const hasWallet = form.wallet_addresses.split(",").map((s) => s.trim()).filter(Boolean).length > 0;
+    if (!hasTxHash && !hasWallet) {
+      setError("Please provide at least one wallet address or transaction hash as on-chain evidence.");
+      return;
+    }
+
+    if (!confirmedTruthful || !confirmedLiability) {
+      setError("You must confirm both legal declarations before submitting.");
       return;
     }
 
@@ -526,6 +540,75 @@ export default function SubmitPage() {
           </p>
         </section>
 
+        {/* Legal declarations */}
+        <section className="rounded-2xl p-5 space-y-4"
+          style={{ backgroundColor: "rgba(245,158,11,0.04)", border: "1.5px solid rgba(245,158,11,0.25)" }}>
+          <h2 className="text-sm font-black" style={{ color: "#f59e0b" }}>⚖️ Legal Declarations</h2>
+          <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
+            Both declarations are required before submission. False reports may expose you to civil or criminal liability.
+          </p>
+
+          <label className="flex items-start gap-3 cursor-pointer group">
+            <div className="relative flex-shrink-0 mt-0.5">
+              <input
+                type="checkbox"
+                checked={confirmedTruthful}
+                onChange={(e) => setConfirmedTruthful(e.target.checked)}
+                className="sr-only"
+              />
+              <div
+                style={{
+                  width: 18,
+                  height: 18,
+                  borderRadius: 4,
+                  border: confirmedTruthful ? "2px solid #f59e0b" : "2px solid rgba(245,158,11,0.4)",
+                  backgroundColor: confirmedTruthful ? "rgba(245,158,11,0.15)" : "transparent",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transition: "all 0.15s",
+                }}
+              >
+                {confirmedTruthful && <span style={{ color: "#f59e0b", fontSize: 12, fontWeight: 900 }}>✓</span>}
+              </div>
+            </div>
+            <span className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+              <strong style={{ color: "var(--text-primary)" }}>I declare that all information submitted is truthful and accurate to the best of my knowledge.</strong>{" "}
+              I understand that submitting knowingly false information may constitute defamation or fraud.
+            </span>
+          </label>
+
+          <label className="flex items-start gap-3 cursor-pointer group">
+            <div className="relative flex-shrink-0 mt-0.5">
+              <input
+                type="checkbox"
+                checked={confirmedLiability}
+                onChange={(e) => setConfirmedLiability(e.target.checked)}
+                className="sr-only"
+              />
+              <div
+                style={{
+                  width: 18,
+                  height: 18,
+                  borderRadius: 4,
+                  border: confirmedLiability ? "2px solid #f59e0b" : "2px solid rgba(245,158,11,0.4)",
+                  backgroundColor: confirmedLiability ? "rgba(245,158,11,0.15)" : "transparent",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transition: "all 0.15s",
+                }}
+              >
+                {confirmedLiability && <span style={{ color: "#f59e0b", fontSize: 12, fontWeight: 900 }}>✓</span>}
+              </div>
+            </div>
+            <span className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+              <strong style={{ color: "var(--text-primary)" }}>I accept sole responsibility for the content of this report.</strong>{" "}
+              REKTgistry is a neutral publishing platform. I release REKTgistry from all liability arising from this submission. REKTgistry reserves the right to remove any submission at its discretion.
+            </span>
+          </label>
+        </section>
+
         {error && (
           <div className="rounded-lg p-3 text-sm"
             style={{ backgroundColor: "rgba(204,0,0,0.1)", border: "1px solid rgba(204,0,0,0.25)", color: "#ff6b6b" }}>
@@ -533,7 +616,7 @@ export default function SubmitPage() {
           </div>
         )}
 
-        <button type="submit" disabled={submitting}
+        <button type="submit" disabled={submitting || !confirmedTruthful || !confirmedLiability}
           className="w-full py-3 rounded-xl text-sm font-black transition-all disabled:opacity-40"
           style={{
             backgroundColor: "rgba(224,64,251,0.12)",

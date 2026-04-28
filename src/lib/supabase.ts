@@ -28,6 +28,8 @@ export interface ScammerProfile {
   chain: string | null;
   featured_until: string | null;
   featured_tier: string | null;
+  tx_hashes: string[] | null;
+  evidence_urls: string[] | null;
 }
 
 export async function getProfiles({
