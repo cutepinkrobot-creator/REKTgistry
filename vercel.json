@@ -2,15 +2,15 @@
   "crons": [
     {
       "path": "/api/cron/zachxbt-rss",
-      "schedule": "0 */6 * * *"
+      "schedule": "0 8 * * *"
     },
     {
       "path": "/api/cron/chainabuse-sync",
-      "schedule": "0 */12 * * *"
+      "schedule": "0 9 * * *"
     },
     {
       "path": "/api/cron/twitter-monitor",
-      "schedule": "0 */4 * * *"
+      "schedule": "0 10 * * *"
     }
   ]
 }
