@@ -191,10 +191,12 @@ function bigOutline(ctx, text, x, y, font, AC) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// IMAGE 3 — Anatomy of a Pump & Dump  →  SPLIT GREEN / RED
+// IMAGE 3 — Anatomy of a Pump & Dump  →  BLUE / PURPLE / AMBER
 // ══════════════════════════════════════════════════════════════════════════
 {
-  const c = createCanvas(W, H); const ctx = c.getContext('2d');
+  const SCALE = 2;
+  const c = createCanvas(W * SCALE, H * SCALE); const ctx = c.getContext('2d');
+  ctx.scale(SCALE, SCALE);
 
   ctx.fillStyle = BG; ctx.fillRect(0, 0, W, H);
   ctx.strokeStyle = `rgba(204,255,0,${GRID_A})`; ctx.lineWidth = 1;
@@ -202,11 +204,11 @@ function bigOutline(ctx, text, x, y, font, AC) {
   for (let x = 0; x <= W; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
 
   const gL = ctx.createRadialGradient(200, H/2, 0, 200, H/2, 400);
-  gL.addColorStop(0, 'rgba(34,197,94,0.07)'); gL.addColorStop(1, 'rgba(0,0,0,0)');
+  gL.addColorStop(0, 'rgba(59,130,246,0.08)'); gL.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = gL; ctx.fillRect(0, 0, W, H);
 
   const gR = ctx.createRadialGradient(W - 200, H/2, 0, W - 200, H/2, 400);
-  gR.addColorStop(0, 'rgba(239,68,68,0.08)'); gR.addColorStop(1, 'rgba(0,0,0,0)');
+  gR.addColorStop(0, 'rgba(168,85,247,0.08)'); gR.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = gR; ctx.fillRect(0, 0, W, H);
 
   drawNeonLine(ctx, 3, 'rgba(204,255,0,0.55)');
@@ -225,19 +227,19 @@ function bigOutline(ctx, text, x, y, font, AC) {
     {
       phase: 'PHASE 1',
       title: 'THE PUMP',
-      color: '#22c55e',
+      color: '#3b82f6',
       items: ['Insiders pre-buy at launch', 'Fake hype in Telegram & X', 'Influencers paid to shill', 'FOMO brings retail in'],
     },
     {
       phase: 'PHASE 2',
       title: 'THE TOP',
-      color: '#eab308',
+      color: '#a855f7',
       items: ['Price hits ATH fast', 'Volume looks organic', 'Dev wallets fully loaded', 'Countdown has begun'],
     },
     {
       phase: 'PHASE 3',
       title: 'THE DUMP',
-      color: '#ef4444',
+      color: '#f59e0b',
       items: ['Insiders sell everything', 'Price craters instantly', 'Retail left holding bags', 'Devs vanish, TG goes silent'],
     },
   ];

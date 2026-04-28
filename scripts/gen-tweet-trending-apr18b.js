@@ -178,7 +178,7 @@ function drawPills(ctx, pills, py, ph, AC) {
   );
   drawNeonLine(ctx, 3, `${AC}cc`);
   drawLogo(ctx);
-  drawBadge(ctx, '◈ ROMANCE FRAUD · 2026 REPORT', AC);
+  drawBadge(ctx, '◈ SECRET SERVICE WARNING · APRIL 2026', AC);
   drawDivider(ctx, 90, `${AC}22`);
 
   ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
@@ -216,11 +216,11 @@ function drawPills(ctx, pills, py, ph, AC) {
 
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillStyle = `${AC}88`; ctx.font = 'bold 13px Orbitron';
-  ctx.fillText('40% YoY growth in 2024 · Scam revenue up every single year since 2020', W / 2, 458);
+  ctx.fillText('U.S. Secret Service issued official warning April 17 · scams up 40% YoY', W / 2, 458);
   ctx.fillStyle = DIMMER; ctx.font = 'bold 15px Orbitron';
   ctx.fillText("They didn't fall in love with you. They fell in love with your wallet.", W / 2, 482);
 
-  drawBottomBar(ctx, AC, 'Source: TRM Labs · Chainalysis · 2026');
+  drawBottomBar(ctx, AC, 'Source: U.S. Secret Service · TRM Labs · April 2026');
   drawNeonLine(ctx, H - 2, `${AC}bb`);
 
   fs.writeFileSync(path.join(__dirname, '../public/rektgistry-tweet-pig-butchering.png'), c.toBuffer('image/png'));
