@@ -95,7 +95,6 @@ export async function POST(request: Request) {
         aliases: data.aliases ?? [],
         twitter_handle: data.twitter_handle ?? null,
         telegram_handle: data.telegram_handle ?? null,
-        discord_handle: data.discord_handle ?? null,
         wallet_addresses: data.wallet_addresses ?? [],
         website: data.website ?? null,
         chain: data.chain ?? null,
@@ -106,20 +105,17 @@ export async function POST(request: Request) {
         status: "pending",
         reports_count: 1,
         verified: false,
-        reporter_name: data.reporter_name ?? null,
-        reporter_email: data.reporter_email ?? null,
-        reporter_twitter: data.reporter_twitter ?? null,
-        evidence_description: data.evidence_description ?? null,
         evidence_urls: evidenceUrls,
         tx_hashes: data.tx_hashes ?? [],
         slug: toSlug(String(data.display_name)) + '-' + Date.now(),
       });
       if (error) {
         console.error("[api/submit] Supabase error:", error);
-        // Fall through — still return success to user so they aren't frustrated
+        return NextResponse.json({ ok: false, error: "Submission failed. Please try again." }, { status: 500 });
       }
     } catch (dbErr) {
       console.error("[api/submit] DB insert failed:", dbErr);
+      return NextResponse.json({ ok: false, error: "Submission failed. Please try again." }, { status: 500 });
     }
 
     return NextResponse.json({ ok: true, success: true });
