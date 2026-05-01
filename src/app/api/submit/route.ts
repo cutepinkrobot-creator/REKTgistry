@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+function toSlug(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
 // ── Rate limiting (in-memory, resets on cold start) ─────────────────────────
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT = 3;       // max submissions
@@ -108,7 +112,7 @@ export async function POST(request: Request) {
         evidence_description: data.evidence_description ?? null,
         evidence_urls: evidenceUrls,
         tx_hashes: data.tx_hashes ?? [],
-        submitted_at: new Date().toISOString(),
+        slug: toSlug(String(data.display_name)) + '-' + Date.now(),
       });
       if (error) {
         console.error("[api/submit] Supabase error:", error);
