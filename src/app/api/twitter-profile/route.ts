@@ -23,7 +23,6 @@ export async function GET(req: NextRequest) {
   const [twitterRes, registryRes] = await Promise.allSettled([
     fetch(`${SLEEPLESS_BASE}/users/${handle}`, {
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      signal: AbortSignal.timeout(10000),
     }),
     supabase
       .from('scammer_profiles')
