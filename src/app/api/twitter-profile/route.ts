@@ -1,9 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { Scraper } from 'agent-twitter-client';
 
 const SLEEPLESS_BASE = 'https://sleeplessagent.ai/api/twitter';
 const TWITTER_V2_BASE = 'https://api.twitter.com/2/users/by/username';
 const SYNDICATION_BASE = 'https://cdn.syndication.twimg.com/widgets/followbutton/info.json';
+
+// Reuse a single logged-in scraper across warm lambda invocations
+let _scraper: Scraper | null = null;
+async function getScraper(): Promise<Scraper | null> {
+  const user = process.env.TWITTER_USERNAME;
+  const pass = process.env.TWITTER_PASSWORD;
+  if (!user || !pass) return null;
+  try {
+    if (_scraper && await _scraper.isLoggedIn()) return _scraper;
+    const s = new Scraper();
+    await s.login(user, pass, process.env.TWITTER_EMAIL);
+    _scraper = s;
+    return s;
+  } catch {
+    return null;
+  }
+}
 
 function getSupabase() {
   return createClient(
@@ -57,7 +75,35 @@ export async function GET(req: NextRequest) {
 
   let profile: Profile | null = null;
 
-  // ── Source 1: Twitter API v2 (official, free tier, most reliable) ──────────
+  // ── Source 1: agent-twitter-client (logged-in scraper, free) ─────────────
+  if (!profile) {
+    try {
+      const scraper = await getScraper();
+      if (scraper) {
+        const p = await scraper.getProfile(handle);
+        if (p && (p.name || p.username)) {
+          profile = {
+            name: p.name ?? p.username ?? handle,
+            username: p.username ?? handle,
+            bio: p.biography ?? null,
+            followers: p.followersCount ?? 0,
+            following: p.followingCount ?? 0,
+            tweets: p.tweetsCount ?? 0,
+            avatar: p.avatar
+              ? (p.avatar as string).replace('_normal', '_400x400')
+              : `https://unavatar.io/twitter/${handle}`,
+            verified: p.isBlueVerified ?? false,
+            joined: p.joined ? String(p.joined) : null,
+            location: p.location ?? null,
+            website: p.website ?? null,
+            isStub: false,
+          };
+        }
+      }
+    } catch { /* next source */ }
+  }
+
+  // ── Source 2: Twitter API v2 (official Bearer token, if configured) ───────
   const twitterBearer = process.env.TWITTER_BEARER_TOKEN;
   if (!profile && twitterBearer) {
     try {

@@ -11,7 +11,7 @@
   "dependencies": {
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.103.0",
-    "@vercel/analytics": "^2.0.1",
+    "agent-twitter-client": "^0.0.18",
     "canvas": "^3.2.3",
     "next": "16.2.2",
     "react": "19.2.4",
