@@ -51,6 +51,7 @@ export default function TwitterLookup() {
   const [searched, setSearched] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [profileTimeout, setProfileTimeout] = useState(false);
+  const [profileUnavailable, setProfileUnavailable] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function lookup(e?: React.FormEvent) {
@@ -63,6 +64,7 @@ export default function TwitterLookup() {
     setMatches([]);
     setSearched(h);
     setProfileTimeout(false);
+    setProfileUnavailable(false);
     try {
       const res = await fetch(`/api/twitter-profile?handle=${encodeURIComponent(h)}`);
       const json = await res.json();
@@ -72,6 +74,7 @@ export default function TwitterLookup() {
         setProfile(json.profile);
         setMatches(json.registryMatches ?? []);
         setProfileTimeout(json.profileTimeout ?? false);
+        setProfileUnavailable(json.profileUnavailable ?? false);
       }
     } catch {
       setError('Something went wrong. Please try again.');
@@ -161,8 +164,8 @@ export default function TwitterLookup() {
         </div>
       )}
 
-      {/* All clear */}
-      {!loading && searched && !isRekt && (profile || searched) && (
+      {/* All clear — only show when registry check actually ran and found nothing */}
+      {!loading && searched && !isRekt && !error && (profile || profileUnavailable || profileTimeout) && (
         <div style={{
           padding: '10px 16px', borderRadius: 10, marginBottom: 14,
           backgroundColor: 'rgba(57,255,20,0.06)', border: '1px solid rgba(57,255,20,0.2)',
@@ -256,6 +259,50 @@ export default function TwitterLookup() {
         </div>
       )}
 
+      {/* Twitter data unavailable (API down / rate-limited) */}
+      {!loading && searched && !profile && profileUnavailable && (
+        <div style={{
+          padding: '14px 16px', borderRadius: 10, marginBottom: 14,
+          backgroundColor: 'rgba(148,163,184,0.06)', border: '1px solid rgba(148,163,184,0.2)',
+          display: 'flex', alignItems: 'flex-start', gap: 10,
+        }}>
+          <span style={{ fontSize: 16, flexShrink: 0 }}>𝕏</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ ...orb, fontSize: 12, fontWeight: 900, color: 'var(--text-secondary)', marginBottom: 4 }}>
+              TWITTER PREVIEW UNAVAILABLE
+            </div>
+            <div style={{ ...orb, fontSize: 11, color: 'var(--text-secondary)', marginBottom: 10, lineHeight: 1.6 }}>
+              Profile data can&apos;t be fetched right now. Registry check still ran — results below.
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <a
+                href={`https://x.com/${searched}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  ...orb, fontSize: 11, fontWeight: 700, padding: '5px 12px',
+                  borderRadius: 6, border: '1px solid rgba(148,163,184,0.3)',
+                  backgroundColor: 'rgba(148,163,184,0.06)', color: 'var(--text-secondary)',
+                  textDecoration: 'none',
+                }}
+              >
+                View @{searched} on X →
+              </a>
+              <button
+                onClick={() => lookup()}
+                style={{
+                  ...orb, fontSize: 11, fontWeight: 700, padding: '5px 12px',
+                  borderRadius: 6, cursor: 'pointer', border: '1px solid rgba(245,158,11,0.3)',
+                  backgroundColor: 'rgba(245,158,11,0.06)', color: '#f59e0b',
+                }}
+              >
+                ↺ Retry
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Timeout warning */}
       {!loading && searched && !profile && profileTimeout && (
         <div style={{
@@ -269,7 +316,7 @@ export default function TwitterLookup() {
               TWITTER LOOKUP TIMED OUT
             </div>
             <div style={{ ...orb, fontSize: 11, color: 'var(--text-secondary)', marginBottom: 10 }}>
-              The data provider is slow right now. The registry check still ran — see results below.
+              The data provider is slow. Registry check still ran — see results below.
             </div>
             <button
               onClick={() => lookup()}
@@ -285,8 +332,8 @@ export default function TwitterLookup() {
         </div>
       )}
 
-      {/* No Twitter profile found (non-timeout) */}
-      {!loading && searched && !profile && !profileTimeout && !error && (
+      {/* No Twitter profile found (API returned cleanly but no account) */}
+      {!loading && searched && !profile && !profileTimeout && !profileUnavailable && !error && (
         <div style={{
           ...orb, padding: '14px 16px', borderRadius: 10, marginBottom: 14, fontSize: 12,
           backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)',

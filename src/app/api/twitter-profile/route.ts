@@ -48,32 +48,44 @@ export async function GET(req: NextRequest) {
 
   // Parse Twitter profile
   let profile = null;
-  if (twitterRes.status === 'fulfilled' && twitterRes.value.ok) {
-    try {
-      const res = await twitterRes.value.json();
-      // Sleepless: { data: { ...fields }, code: 200 }
-      const raw = res?.data ?? res;
-      // profile_image_url is often null from this API — fall back to unavatar.io
-      const avatarUrl = raw.profile_image_url
-        ? raw.profile_image_url.replace('_normal', '_400x400')
-        : `https://unavatar.io/twitter/${handle}`;
-      // current screen_name may differ from searched handle (renamed accounts)
-      const currentHandle = raw.screen_name ?? raw.userName ?? raw.username ?? handle;
-      profile = {
-        name: raw.name ?? raw.displayName ?? currentHandle,
-        username: currentHandle,
-        bio: raw.description ?? raw.bio ?? null,
-        followers: raw.followers_count ?? raw.followersCount ?? 0,
-        following: raw.following_count ?? raw.followingCount ?? raw.friends_count ?? 0,
-        tweets: raw.tweet_count ?? raw.tweetsCount ?? raw.statuses_count ?? 0,
-        avatar: avatarUrl,
-        verified: raw.is_blue_verified ?? raw.isBlueVerified ?? raw.verified ?? false,
-        joined: raw.created_at ?? raw.createdAt ?? null,
-        location: raw.location ?? null,
-        website: (raw.urls?.[0]?.expanded_url) ?? raw.externalUrl ?? null,
-      };
-    } catch {
-      profile = null;
+  let profileUnavailable = false;
+
+  if (twitterRes.status === 'fulfilled') {
+    if (twitterRes.value.ok) {
+      try {
+        const res = await twitterRes.value.json();
+        // Sleepless: { data: { ...fields }, code: 200 }
+        const raw = res?.data ?? res;
+        // If the body itself signals an error (e.g. { detail: "..." }), treat as unavailable
+        if (raw?.detail || raw?.error || (!raw?.name && !raw?.displayName && !raw?.screen_name && !raw?.userName && !raw?.username)) {
+          profileUnavailable = true;
+        } else {
+          // profile_image_url is often null from this API — fall back to unavatar.io
+          const avatarUrl = raw.profile_image_url
+            ? raw.profile_image_url.replace('_normal', '_400x400')
+            : `https://unavatar.io/twitter/${handle}`;
+          // current screen_name may differ from searched handle (renamed accounts)
+          const resolvedHandle = raw.screen_name ?? raw.userName ?? raw.username ?? handle;
+          profile = {
+            name: raw.name ?? raw.displayName ?? resolvedHandle,
+            username: resolvedHandle,
+            bio: raw.description ?? raw.bio ?? null,
+            followers: raw.followers_count ?? raw.followersCount ?? 0,
+            following: raw.following_count ?? raw.followingCount ?? raw.friends_count ?? 0,
+            tweets: raw.tweet_count ?? raw.tweetsCount ?? raw.statuses_count ?? 0,
+            avatar: avatarUrl,
+            verified: raw.is_blue_verified ?? raw.isBlueVerified ?? raw.verified ?? false,
+            joined: raw.created_at ?? raw.createdAt ?? null,
+            location: raw.location ?? null,
+            website: (raw.urls?.[0]?.expanded_url) ?? raw.externalUrl ?? null,
+          };
+        }
+      } catch {
+        profileUnavailable = true;
+      }
+    } else {
+      // Non-2xx from Sleepless (rate-limited, banned accounts, etc.)
+      profileUnavailable = true;
     }
   }
 
@@ -103,5 +115,5 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ ok: true, profile, profileTimeout, registryMatches });
+  return NextResponse.json({ ok: true, profile, profileTimeout, profileUnavailable, registryMatches });
 }
