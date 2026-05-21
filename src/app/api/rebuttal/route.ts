@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 // GET — fetch approved rebuttals for a profile
 export async function GET(req: NextRequest) {
@@ -13,6 +15,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'Missing profile_id' }, { status: 400 });
   }
 
+  const supabase = getSupabase();
   const { data, error } = await supabase
     .from('rebuttals')
     .select('id, profile_id, name, content, created_at')
@@ -44,6 +47,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Rate limit — max 3 rebuttals per profile per day (crude check via count)
+    const supabase = getSupabase();
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const { count } = await supabase
       .from('rebuttals')

@@ -3,10 +3,12 @@ import { createClient } from '@supabase/supabase-js';
 
 const SLEEPLESS_BASE = 'https://sleeplessagent.ai/api/twitter';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+}
 
 export async function GET(req: NextRequest) {
   const handle = req.nextUrl.searchParams.get('handle')?.replace('@', '').trim();
@@ -20,6 +22,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Fetch Twitter profile + check registry in parallel
+  const supabase = getSupabase();
   const [twitterRes, registryRes] = await Promise.allSettled([
     fetch(`${SLEEPLESS_BASE}/users/${handle}`, {
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
