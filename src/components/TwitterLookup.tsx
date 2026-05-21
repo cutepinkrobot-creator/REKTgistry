@@ -216,6 +216,11 @@ export default function TwitterLookup() {
               >
                 @{profile.username}
               </a>
+              {profile.username.toLowerCase() !== searched.toLowerCase() && (
+                <div style={{ ...orb, fontSize: 10, color: '#f59e0b', marginTop: 3 }}>
+                  ↩ previously @{searched}
+                </div>
+              )}
               {profile.location && (
                 <div style={{ ...orb, fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
                   📍 {profile.location}

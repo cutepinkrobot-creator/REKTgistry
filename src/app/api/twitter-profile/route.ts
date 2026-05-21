@@ -77,11 +77,31 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // Parse registry matches
-  const registryMatches =
+  // Parse registry matches (searched handle)
+  let registryMatches =
     registryRes.status === 'fulfilled' && !registryRes.value.error
       ? (registryRes.value.data ?? [])
       : [];
+
+  // If Twitter returned a different current handle (account renamed), also check that handle
+  // so registry entries filed under either the old or new handle are both surfaced.
+  const currentHandle = profile?.username;
+  if (currentHandle && currentHandle.toLowerCase() !== handle.toLowerCase()) {
+    const { data: extraData } = await supabase
+      .from('scammer_profiles')
+      .select('id, slug, display_name, summary, amount_lost_usd, categories, verified, incident_date')
+      .eq('status', 'approved')
+      .or(`twitter_handle.ilike.${currentHandle},aliases.cs.{"${currentHandle}"}`)
+      .limit(3);
+
+    if (extraData?.length) {
+      const existingIds = new Set(registryMatches.map((m: { id: string }) => m.id));
+      registryMatches = [
+        ...registryMatches,
+        ...extraData.filter((m: { id: string }) => !existingIds.has(m.id)),
+      ];
+    }
+  }
 
   return NextResponse.json({ ok: true, profile, profileTimeout, registryMatches });
 }
