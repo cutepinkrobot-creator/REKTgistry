@@ -50,6 +50,7 @@ export default function TwitterLookup() {
   const [matches, setMatches] = useState<RegistryMatch[]>([]);
   const [searched, setSearched] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [profileTimeout, setProfileTimeout] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function lookup(e?: React.FormEvent) {
@@ -61,6 +62,7 @@ export default function TwitterLookup() {
     setProfile(null);
     setMatches([]);
     setSearched(h);
+    setProfileTimeout(false);
     try {
       const res = await fetch(`/api/twitter-profile?handle=${encodeURIComponent(h)}`);
       const json = await res.json();
@@ -69,6 +71,7 @@ export default function TwitterLookup() {
       } else {
         setProfile(json.profile);
         setMatches(json.registryMatches ?? []);
+        setProfileTimeout(json.profileTimeout ?? false);
       }
     } catch {
       setError('Something went wrong. Please try again.');
@@ -248,8 +251,37 @@ export default function TwitterLookup() {
         </div>
       )}
 
-      {/* No Twitter profile found */}
-      {!loading && searched && !profile && !error && (
+      {/* Timeout warning */}
+      {!loading && searched && !profile && profileTimeout && (
+        <div style={{
+          padding: '14px 16px', borderRadius: 10, marginBottom: 14,
+          backgroundColor: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.3)',
+          display: 'flex', alignItems: 'flex-start', gap: 10,
+        }}>
+          <span style={{ fontSize: 16, flexShrink: 0 }}>⏱</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ ...orb, fontSize: 12, fontWeight: 900, color: '#f59e0b', marginBottom: 4 }}>
+              TWITTER LOOKUP TIMED OUT
+            </div>
+            <div style={{ ...orb, fontSize: 11, color: 'var(--text-secondary)', marginBottom: 10 }}>
+              The data provider is slow right now. The registry check still ran — see results below.
+            </div>
+            <button
+              onClick={() => lookup()}
+              style={{
+                ...orb, fontSize: 11, fontWeight: 700, padding: '5px 12px',
+                borderRadius: 6, cursor: 'pointer', border: '1px solid rgba(245,158,11,0.4)',
+                backgroundColor: 'rgba(245,158,11,0.08)', color: '#f59e0b',
+              }}
+            >
+              ↺ Retry
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* No Twitter profile found (non-timeout) */}
+      {!loading && searched && !profile && !profileTimeout && !error && (
         <div style={{
           ...orb, padding: '14px 16px', borderRadius: 10, marginBottom: 14, fontSize: 12,
           backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)',

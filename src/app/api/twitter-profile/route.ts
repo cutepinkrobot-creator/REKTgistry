@@ -23,9 +23,13 @@ export async function GET(req: NextRequest) {
 
   // Fetch Twitter profile + check registry in parallel
   const supabase = getSupabase();
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 9000); // 9s — under Vercel's 10s limit
+
   const [twitterRes, registryRes] = await Promise.allSettled([
     fetch(`${SLEEPLESS_BASE}/users/${handle}`, {
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      signal: controller.signal,
     }),
     supabase
       .from('scammer_profiles')
@@ -34,6 +38,13 @@ export async function GET(req: NextRequest) {
       .or(`twitter_handle.ilike.${handle},aliases.cs.{"${handle}"}`)
       .limit(3),
   ]);
+
+  clearTimeout(timeoutId);
+
+  // Detect timeout vs other failures
+  const profileTimeout =
+    twitterRes.status === 'rejected' &&
+    (twitterRes.reason as Error)?.name === 'AbortError';
 
   // Parse Twitter profile
   let profile = null;
@@ -72,5 +83,5 @@ export async function GET(req: NextRequest) {
       ? (registryRes.value.data ?? [])
       : [];
 
-  return NextResponse.json({ ok: true, profile, registryMatches });
+  return NextResponse.json({ ok: true, profile, profileTimeout, registryMatches });
 }
