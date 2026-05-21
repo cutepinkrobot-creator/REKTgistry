@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 const SLEEPLESS_BASE = 'https://sleeplessagent.ai/api/twitter';
+const SYNDICATION_BASE = 'https://cdn.syndication.twimg.com/widgets/followbutton/info.json';
 
 function getSupabase() {
   return createClient(
@@ -46,48 +47,84 @@ export async function GET(req: NextRequest) {
     twitterRes.status === 'rejected' &&
     (twitterRes.reason as Error)?.name === 'AbortError';
 
-  // Parse Twitter profile
-  let profile = null;
-  let profileUnavailable = false;
-
-  if (twitterRes.status === 'fulfilled') {
-    if (twitterRes.value.ok) {
-      try {
-        const res = await twitterRes.value.json();
-        // Sleepless: { data: { ...fields }, code: 200 }
-        const raw = res?.data ?? res;
-        // If the body itself signals an error (e.g. { detail: "..." }), treat as unavailable
-        if (raw?.detail || raw?.error || (!raw?.name && !raw?.displayName && !raw?.screen_name && !raw?.userName && !raw?.username)) {
-          profileUnavailable = true;
-        } else {
-          // profile_image_url is often null from this API — fall back to unavatar.io
-          const avatarUrl = raw.profile_image_url
-            ? raw.profile_image_url.replace('_normal', '_400x400')
-            : `https://unavatar.io/twitter/${handle}`;
-          // current screen_name may differ from searched handle (renamed accounts)
-          const resolvedHandle = raw.screen_name ?? raw.userName ?? raw.username ?? handle;
-          profile = {
-            name: raw.name ?? raw.displayName ?? resolvedHandle,
-            username: resolvedHandle,
-            bio: raw.description ?? raw.bio ?? null,
-            followers: raw.followers_count ?? raw.followersCount ?? 0,
-            following: raw.following_count ?? raw.followingCount ?? raw.friends_count ?? 0,
-            tweets: raw.tweet_count ?? raw.tweetsCount ?? raw.statuses_count ?? 0,
-            avatar: avatarUrl,
-            verified: raw.is_blue_verified ?? raw.isBlueVerified ?? raw.verified ?? false,
-            joined: raw.created_at ?? raw.createdAt ?? null,
-            location: raw.location ?? null,
-            website: (raw.urls?.[0]?.expanded_url) ?? raw.externalUrl ?? null,
-          };
-        }
-      } catch {
-        profileUnavailable = true;
-      }
-    } else {
-      // Non-2xx from Sleepless (rate-limited, banned accounts, etc.)
-      profileUnavailable = true;
-    }
+  // Helper: parse a raw object from any source into our profile shape
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function parseRaw(raw: Record<string, any>, fallbackHandle: string) {
+    const resolvedHandle = raw.screen_name ?? raw.userName ?? raw.username ?? fallbackHandle;
+    const avatarUrl =
+      (raw.profile_image_url_https ?? raw.profile_image_url)
+        ? (raw.profile_image_url_https ?? raw.profile_image_url).replace('_normal', '_400x400')
+        : `https://unavatar.io/twitter/${fallbackHandle}`;
+    return {
+      name: raw.name ?? raw.displayName ?? resolvedHandle,
+      username: resolvedHandle,
+      bio: raw.description ?? raw.bio ?? null,
+      followers: raw.followers_count ?? raw.followersCount ?? 0,
+      following: raw.following_count ?? raw.followingCount ?? raw.friends_count ?? 0,
+      tweets: raw.tweet_count ?? raw.tweetsCount ?? raw.statuses_count ?? 0,
+      avatar: avatarUrl,
+      verified: raw.is_blue_verified ?? raw.isBlueVerified ?? raw.verified ?? false,
+      joined: raw.created_at ?? raw.createdAt ?? null,
+      location: raw.location ?? null,
+      website: (raw.urls?.[0]?.expanded_url) ?? raw.externalUrl ?? null,
+      isStub: false,
+    };
   }
+
+  let profile: ReturnType<typeof parseRaw> | null = null;
+
+  // ── Source 1: Sleepless API ──────────────────────────────────────────────
+  if (twitterRes.status === 'fulfilled' && twitterRes.value.ok) {
+    try {
+      const res = await twitterRes.value.json();
+      const raw = res?.data ?? res;
+      // Sleepless returns { detail: "..." } on error even with 200
+      if (raw && !raw.detail && !raw.error && (raw.name || raw.displayName || raw.screen_name || raw.userName || raw.username)) {
+        profile = parseRaw(raw, handle);
+      }
+    } catch { /* fall through to next source */ }
+  }
+
+  // ── Source 2: Twitter syndication API (no auth needed) ───────────────────
+  if (!profile) {
+    try {
+      const synRes = await fetch(
+        `${SYNDICATION_BASE}?screen_names=${encodeURIComponent(handle)}`,
+        {
+          headers: { 'User-Agent': 'Mozilla/5.0' },
+          signal: AbortSignal.timeout ? AbortSignal.timeout(6000) : undefined,
+        }
+      );
+      if (synRes.ok) {
+        const synData = await synRes.json();
+        // Returns an array; first element is the matching user
+        const raw = Array.isArray(synData) ? synData[0] : null;
+        if (raw?.screen_name) {
+          profile = parseRaw(raw, handle);
+        }
+      }
+    } catch { /* fall through to stub */ }
+  }
+
+  // ── Stub: show avatar + handle so there's always something rendered ───────
+  if (!profile) {
+    profile = {
+      name: handle,
+      username: handle,
+      bio: null,
+      followers: 0,
+      following: 0,
+      tweets: 0,
+      avatar: `https://unavatar.io/twitter/${handle}`,
+      verified: false,
+      joined: null,
+      location: null,
+      website: null,
+      isStub: true,
+    };
+  }
+
+  const profileUnavailable = profile.isStub;
 
   // Parse registry matches (searched handle)
   let registryMatches =
@@ -97,8 +134,8 @@ export async function GET(req: NextRequest) {
 
   // If Twitter returned a different current handle (account renamed), also check that handle
   // so registry entries filed under either the old or new handle are both surfaced.
-  const currentHandle = profile?.username;
-  if (currentHandle && currentHandle.toLowerCase() !== handle.toLowerCase()) {
+  const currentHandle = profile.username;
+  if (!profile.isStub && currentHandle.toLowerCase() !== handle.toLowerCase()) {
     const { data: extraData } = await supabase
       .from('scammer_profiles')
       .select('id, slug, display_name, summary, amount_lost_usd, categories, verified, incident_date')

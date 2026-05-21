@@ -15,6 +15,7 @@ interface TwitterProfile {
   joined: string | null;
   location: string | null;
   website: string | null;
+  isStub: boolean;
 }
 
 interface RegistryMatch {
@@ -50,8 +51,6 @@ export default function TwitterLookup() {
   const [matches, setMatches] = useState<RegistryMatch[]>([]);
   const [searched, setSearched] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [profileTimeout, setProfileTimeout] = useState(false);
-  const [profileUnavailable, setProfileUnavailable] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function lookup(e?: React.FormEvent) {
@@ -63,8 +62,6 @@ export default function TwitterLookup() {
     setProfile(null);
     setMatches([]);
     setSearched(h);
-    setProfileTimeout(false);
-    setProfileUnavailable(false);
     try {
       const res = await fetch(`/api/twitter-profile?handle=${encodeURIComponent(h)}`);
       const json = await res.json();
@@ -73,8 +70,6 @@ export default function TwitterLookup() {
       } else {
         setProfile(json.profile);
         setMatches(json.registryMatches ?? []);
-        setProfileTimeout(json.profileTimeout ?? false);
-        setProfileUnavailable(json.profileUnavailable ?? false);
       }
     } catch {
       setError('Something went wrong. Please try again.');
@@ -164,8 +159,8 @@ export default function TwitterLookup() {
         </div>
       )}
 
-      {/* All clear — only show when registry check actually ran and found nothing */}
-      {!loading && searched && !isRekt && !error && (profile || profileUnavailable || profileTimeout) && (
+      {/* All clear — only show when registry check ran and found nothing */}
+      {!loading && searched && !isRekt && !error && profile && (
         <div style={{
           padding: '10px 16px', borderRadius: 10, marginBottom: 14,
           backgroundColor: 'rgba(57,255,20,0.06)', border: '1px solid rgba(57,255,20,0.2)',
@@ -178,36 +173,28 @@ export default function TwitterLookup() {
         </div>
       )}
 
-      {/* Twitter profile card */}
+      {/* Profile card — always rendered once a search completes */}
       {!loading && profile && (
         <div style={{
           borderRadius: 14, padding: '20px', marginBottom: 16,
-          backgroundColor: 'var(--bg-card)', border: `1.5px solid ${isRekt ? 'rgba(255,80,80,0.3)' : 'var(--border)'}`,
+          backgroundColor: 'var(--bg-card)',
+          border: `1.5px solid ${isRekt ? 'rgba(255,80,80,0.3)' : 'var(--border)'}`,
+          opacity: profile.isStub ? 0.75 : 1,
         }}>
           {/* Header row */}
-          <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', marginBottom: 14 }}>
+          <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', marginBottom: profile.bio || !profile.isStub ? 14 : 0 }}>
             {/* Avatar */}
-            {profile.avatar ? (
-              <img
-                src={profile.avatar.replace('_normal', '_400x400')}
-                alt={profile.name}
-                style={{ width: 56, height: 56, borderRadius: '50%', flexShrink: 0, objectFit: 'cover' }}
-              />
-            ) : (
-              <div style={{
-                width: 56, height: 56, borderRadius: '50%', flexShrink: 0,
-                backgroundColor: '#ccff00', display: 'flex', alignItems: 'center',
-                justifyContent: 'center', fontSize: 22, fontWeight: 900, color: '#0b0c10', ...orb,
-              }}>
-                {profile.name.charAt(0).toUpperCase()}
-              </div>
-            )}
+            <img
+              src={profile.avatar ?? `https://unavatar.io/twitter/${profile.username}`}
+              alt={profile.name}
+              style={{ width: 56, height: 56, borderRadius: '50%', flexShrink: 0, objectFit: 'cover', background: '#1a1b22' }}
+            />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                 <span style={{ ...orb, fontSize: 16, fontWeight: 900, color: 'var(--text-primary)' }}>
-                  {profile.name}
+                  {profile.isStub ? `@${profile.username}` : profile.name}
                 </span>
-                {profile.verified && (
+                {profile.verified && !profile.isStub && (
                   <span style={{ fontSize: 14 }} title="Verified">✓</span>
                 )}
               </div>
@@ -219,12 +206,29 @@ export default function TwitterLookup() {
               >
                 @{profile.username}
               </a>
-              {profile.username.toLowerCase() !== searched.toLowerCase() && (
+              {!profile.isStub && profile.username.toLowerCase() !== searched.toLowerCase() && (
                 <div style={{ ...orb, fontSize: 10, color: '#f59e0b', marginTop: 3 }}>
                   ↩ previously @{searched}
                 </div>
               )}
-              {profile.location && (
+              {profile.isStub && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
+                  <span style={{ ...orb, fontSize: 10, color: 'var(--text-secondary)' }}>
+                    Stats unavailable right now
+                  </span>
+                  <button
+                    onClick={() => lookup()}
+                    style={{
+                      ...orb, fontSize: 10, fontWeight: 700, padding: '2px 8px',
+                      borderRadius: 4, cursor: 'pointer', border: '1px solid rgba(245,158,11,0.3)',
+                      backgroundColor: 'transparent', color: '#f59e0b',
+                    }}
+                  >
+                    ↺ Retry
+                  </button>
+                </div>
+              )}
+              {!profile.isStub && profile.location && (
                 <div style={{ ...orb, fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
                   📍 {profile.location}
                 </div>
@@ -233,7 +237,7 @@ export default function TwitterLookup() {
           </div>
 
           {/* Bio */}
-          {profile.bio && (
+          {!profile.isStub && profile.bio && (
             <p style={{
               ...orb, fontSize: 12, color: 'var(--text-primary)', lineHeight: 1.7,
               margin: '0 0 14px', padding: '10px 12px', borderRadius: 8,
@@ -244,102 +248,20 @@ export default function TwitterLookup() {
           )}
 
           {/* Stats */}
-          <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-            {[
-              { label: 'Followers', value: fmt(profile.followers) },
-              { label: 'Following', value: fmt(profile.following) },
-              { label: 'Tweets', value: fmt(profile.tweets) },
-            ].map((s) => (
-              <div key={s.label}>
-                <div style={{ ...orb, fontSize: 16, fontWeight: 900, color: 'var(--text-primary)' }}>{s.value}</div>
-                <div style={{ ...orb, fontSize: 10, color: 'var(--text-secondary)', letterSpacing: '0.06em' }}>{s.label.toUpperCase()}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Twitter data unavailable (API down / rate-limited) */}
-      {!loading && searched && !profile && profileUnavailable && (
-        <div style={{
-          padding: '14px 16px', borderRadius: 10, marginBottom: 14,
-          backgroundColor: 'rgba(148,163,184,0.06)', border: '1px solid rgba(148,163,184,0.2)',
-          display: 'flex', alignItems: 'flex-start', gap: 10,
-        }}>
-          <span style={{ fontSize: 16, flexShrink: 0 }}>𝕏</span>
-          <div style={{ flex: 1 }}>
-            <div style={{ ...orb, fontSize: 12, fontWeight: 900, color: 'var(--text-secondary)', marginBottom: 4 }}>
-              TWITTER PREVIEW UNAVAILABLE
+          {!profile.isStub && (
+            <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+              {[
+                { label: 'Followers', value: fmt(profile.followers) },
+                { label: 'Following', value: fmt(profile.following) },
+                { label: 'Tweets', value: fmt(profile.tweets) },
+              ].map((s) => (
+                <div key={s.label}>
+                  <div style={{ ...orb, fontSize: 16, fontWeight: 900, color: 'var(--text-primary)' }}>{s.value}</div>
+                  <div style={{ ...orb, fontSize: 10, color: 'var(--text-secondary)', letterSpacing: '0.06em' }}>{s.label.toUpperCase()}</div>
+                </div>
+              ))}
             </div>
-            <div style={{ ...orb, fontSize: 11, color: 'var(--text-secondary)', marginBottom: 10, lineHeight: 1.6 }}>
-              Profile data can&apos;t be fetched right now. Registry check still ran — results below.
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <a
-                href={`https://x.com/${searched}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  ...orb, fontSize: 11, fontWeight: 700, padding: '5px 12px',
-                  borderRadius: 6, border: '1px solid rgba(148,163,184,0.3)',
-                  backgroundColor: 'rgba(148,163,184,0.06)', color: 'var(--text-secondary)',
-                  textDecoration: 'none',
-                }}
-              >
-                View @{searched} on X →
-              </a>
-              <button
-                onClick={() => lookup()}
-                style={{
-                  ...orb, fontSize: 11, fontWeight: 700, padding: '5px 12px',
-                  borderRadius: 6, cursor: 'pointer', border: '1px solid rgba(245,158,11,0.3)',
-                  backgroundColor: 'rgba(245,158,11,0.06)', color: '#f59e0b',
-                }}
-              >
-                ↺ Retry
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Timeout warning */}
-      {!loading && searched && !profile && profileTimeout && (
-        <div style={{
-          padding: '14px 16px', borderRadius: 10, marginBottom: 14,
-          backgroundColor: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.3)',
-          display: 'flex', alignItems: 'flex-start', gap: 10,
-        }}>
-          <span style={{ fontSize: 16, flexShrink: 0 }}>⏱</span>
-          <div style={{ flex: 1 }}>
-            <div style={{ ...orb, fontSize: 12, fontWeight: 900, color: '#f59e0b', marginBottom: 4 }}>
-              TWITTER LOOKUP TIMED OUT
-            </div>
-            <div style={{ ...orb, fontSize: 11, color: 'var(--text-secondary)', marginBottom: 10 }}>
-              The data provider is slow. Registry check still ran — see results below.
-            </div>
-            <button
-              onClick={() => lookup()}
-              style={{
-                ...orb, fontSize: 11, fontWeight: 700, padding: '5px 12px',
-                borderRadius: 6, cursor: 'pointer', border: '1px solid rgba(245,158,11,0.4)',
-                backgroundColor: 'rgba(245,158,11,0.08)', color: '#f59e0b',
-              }}
-            >
-              ↺ Retry
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* No Twitter profile found (API returned cleanly but no account) */}
-      {!loading && searched && !profile && !profileTimeout && !profileUnavailable && !error && (
-        <div style={{
-          ...orb, padding: '14px 16px', borderRadius: 10, marginBottom: 14, fontSize: 12,
-          backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)',
-          color: 'var(--text-secondary)',
-        }}>
-          No Twitter profile found for @{searched}.
+          )}
         </div>
       )}
 
