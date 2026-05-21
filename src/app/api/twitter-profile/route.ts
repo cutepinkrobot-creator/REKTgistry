@@ -39,17 +39,19 @@ export async function GET(req: NextRequest) {
   let profile = null;
   if (twitterRes.status === 'fulfilled' && twitterRes.value.ok) {
     try {
-      const raw = await twitterRes.value.json();
-      // Normalise field names across different response shapes
+      const res = await twitterRes.value.json();
+      // Sleepless wraps response in { data: { ... } } or { data: { user: { ... } } }
+      const d = res?.data ?? res;
+      const raw = d?.user ?? d;
       profile = {
         name: raw.name ?? raw.displayName ?? raw.full_name ?? handle,
         username: raw.userName ?? raw.username ?? raw.screen_name ?? handle,
         bio: raw.description ?? raw.bio ?? null,
-        followers: raw.followers ?? raw.followersCount ?? raw.followers_count ?? 0,
-        following: raw.following ?? raw.followingCount ?? raw.friends_count ?? 0,
-        tweets: raw.tweets ?? raw.tweetsCount ?? raw.statuses_count ?? 0,
+        followers: raw.followersCount ?? raw.followers_count ?? raw.followers ?? 0,
+        following: raw.followingCount ?? raw.friends_count ?? raw.following ?? 0,
+        tweets: raw.tweetsCount ?? raw.statuses_count ?? raw.tweets ?? 0,
         avatar: raw.profilePicture ?? raw.profile_image_url_https ?? raw.profile_image_url ?? null,
-        verified: raw.isVerified ?? raw.verified ?? raw.isBlueVerified ?? false,
+        verified: raw.isBlueVerified ?? raw.isVerified ?? raw.verified ?? false,
         joined: raw.createdAt ?? raw.created_at ?? null,
         location: raw.location ?? null,
         website: raw.externalUrl ?? raw.url ?? null,
