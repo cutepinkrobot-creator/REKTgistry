@@ -40,21 +40,26 @@ export async function GET(req: NextRequest) {
   if (twitterRes.status === 'fulfilled' && twitterRes.value.ok) {
     try {
       const res = await twitterRes.value.json();
-      // Sleepless wraps response in { data: { ... } } or { data: { user: { ... } } }
-      const d = res?.data ?? res;
-      const raw = d?.user ?? d;
+      // Sleepless: { data: { ...fields }, code: 200 }
+      const raw = res?.data ?? res;
+      // profile_image_url is often null from this API — fall back to unavatar.io
+      const avatarUrl = raw.profile_image_url
+        ? raw.profile_image_url.replace('_normal', '_400x400')
+        : `https://unavatar.io/twitter/${handle}`;
+      // current screen_name may differ from searched handle (renamed accounts)
+      const currentHandle = raw.screen_name ?? raw.userName ?? raw.username ?? handle;
       profile = {
-        name: raw.name ?? raw.displayName ?? raw.full_name ?? handle,
-        username: raw.userName ?? raw.username ?? raw.screen_name ?? handle,
+        name: raw.name ?? raw.displayName ?? currentHandle,
+        username: currentHandle,
         bio: raw.description ?? raw.bio ?? null,
-        followers: raw.followersCount ?? raw.followers_count ?? raw.followers ?? 0,
-        following: raw.followingCount ?? raw.friends_count ?? raw.following ?? 0,
-        tweets: raw.tweetsCount ?? raw.statuses_count ?? raw.tweets ?? 0,
-        avatar: raw.profilePicture ?? raw.profile_image_url_https ?? raw.profile_image_url ?? null,
-        verified: raw.isBlueVerified ?? raw.isVerified ?? raw.verified ?? false,
-        joined: raw.createdAt ?? raw.created_at ?? null,
+        followers: raw.followers_count ?? raw.followersCount ?? 0,
+        following: raw.following_count ?? raw.followingCount ?? raw.friends_count ?? 0,
+        tweets: raw.tweet_count ?? raw.tweetsCount ?? raw.statuses_count ?? 0,
+        avatar: avatarUrl,
+        verified: raw.is_blue_verified ?? raw.isBlueVerified ?? raw.verified ?? false,
+        joined: raw.created_at ?? raw.createdAt ?? null,
         location: raw.location ?? null,
-        website: raw.externalUrl ?? raw.url ?? null,
+        website: (raw.urls?.[0]?.expanded_url) ?? raw.externalUrl ?? null,
       };
     } catch {
       profile = null;
